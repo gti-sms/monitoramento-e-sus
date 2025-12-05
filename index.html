@@ -283,27 +283,6 @@
             color: var(--text-secondary);
         }
 
-        /* Status do Firebase */
-        .firebase-status {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .firebase-status.connected {
-            border-left-color: var(--secondary-color);
-        }
-
-        .firebase-status.error {
-            border-left-color: var(--danger-color);
-        }
-
         /* Modal de Login */
         .modal {
             display: none;
@@ -718,14 +697,7 @@
             </div>
         </header>
 
-        <!-- Status do Firebase -->
-        <div id="firebaseStatus" class="firebase-status">
-            <div class="alert-icon">📡</div>
-            <div>
-                <strong>Sistema Cloud Firebase:</strong>
-                <span id="firebaseStatusMessage">Conectando ao servidor...</span>
-            </div>
-        </div>
+        <!-- REMOVIDO: Status do Firebase para limpeza da tela -->
 
         <!-- Configuração de capacidade do disco -->
         <div id="capacityConfig" class="capacity-config">
@@ -1109,8 +1081,6 @@
             inputDisk: document.getElementById('inputDisk'),
             inputObservations: document.getElementById('inputObservations'),
             adminPanel: document.getElementById('adminPanel'),
-            firebaseStatus: document.getElementById('firebaseStatus'),
-            firebaseStatusMessage: document.getElementById('firebaseStatusMessage'),
             projectionGrid: document.getElementById('projectionGrid'),
             cpuValue: document.getElementById('cpuValue'),
             processesValue: document.getElementById('processesValue'),
@@ -1249,19 +1219,12 @@
                     firestore = firebase.firestore();
                     state.firebaseInitialized = true;
                     
-                    elements.firebaseStatusMessage.textContent = "Conectado ao Firebase Cloud";
-                    elements.firebaseStatus.classList.remove("error");
-                    elements.firebaseStatus.classList.add("connected");
-                    
                     console.log("✅ Firebase inicializado com sucesso");
                     return true;
                 }
                 return true;
             } catch (error) {
                 console.error("❌ Erro ao inicializar Firebase:", error);
-                elements.firebaseStatusMessage.textContent = "Falha na conexão: " + error.message;
-                elements.firebaseStatus.classList.remove("connected");
-                elements.firebaseStatus.classList.add("error");
                 return false;
             }
         }
@@ -1302,9 +1265,6 @@
                         elements.lastSync.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                     }, (error) => {
                         console.error("❌ Erro no listener do Firebase:", error);
-                        elements.firebaseStatusMessage.textContent = "Erro na sincronização: " + error.message;
-                        elements.firebaseStatus.classList.remove("connected");
-                        elements.firebaseStatus.classList.add("error");
                     });
                 
                 console.log("👂 Listener do Firebase configurado com sucesso");
@@ -1449,30 +1409,14 @@
             const avgDailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
             
             // 4. Definir 3 cenários baseados na variação histórica
-            const consumptions = consumptionSamples.map(s => s.dailyConsumption);
-            const minConsumption = Math.min(...consumptions);
-            const maxConsumption = Math.max(...consumptions);
-            
-            // Se tivermos poucas amostras, usar variação fixa
-            let pessimisticFactor, optimisticFactor;
-            if (consumptionSamples.length >= 3) {
-                // Usar variação real dos dados
-                const stdDev = Math.sqrt(consumptions.reduce((sq, n) => sq + Math.pow(n - avgDailyConsumptionGB, 2), 0) / consumptions.length);
-                pessimisticFactor = 1 + (stdDev / avgDailyConsumptionGB);
-                optimisticFactor = 1 - (stdDev / avgDailyConsumptionGB);
-            } else {
-                // Usar variação padrão de 15%
-                pessimisticFactor = 1.15;  // +15%
-                optimisticFactor = 0.85;   // -15%
-            }
-            
+            // MODIFICAÇÃO: Otimista -5%, Pessimista +5% (ajuste de ±5%)
             const scenarios = [
                 { 
                     name: 'Pessimista', 
-                    factor: pessimisticFactor, 
+                    factor: 1.05,  // +5%
                     color: '#e74c3c',
-                    description: 'Baseado no máximo histórico',
-                    dailyConsumption: avgDailyConsumptionGB * pessimisticFactor
+                    description: 'Consumo 5% acima da média',
+                    dailyConsumption: avgDailyConsumptionGB * 1.05
                 },
                 { 
                     name: 'Realista', 
@@ -1483,10 +1427,10 @@
                 },
                 { 
                     name: 'Otimista', 
-                    factor: optimisticFactor, 
+                    factor: 0.95,  // -5%
                     color: '#2ecc71',
-                    description: 'Baseado no mínimo histórico',
-                    dailyConsumption: avgDailyConsumptionGB * optimisticFactor
+                    description: 'Consumo 5% abaixo da média',
+                    dailyConsumption: avgDailyConsumptionGB * 0.95
                 }
             ];
             
@@ -1503,7 +1447,7 @@
             } else {
                 elements.obsGrowthRate.textContent = 
                     `Consumo médio: ${avgDailyConsumptionGB.toFixed(2)} GB/dia ` +
-                    `(baseado em ${consumptionSamples.length} amostras, variação: ${((maxConsumption - minConsumption) / avgDailyConsumptionGB * 100).toFixed(0)}%)`;
+                    `(baseado em ${consumptionSamples.length} amostras)`;
             }
             
             // 7. Períodos de projeção
@@ -1645,7 +1589,7 @@
             statsCard.style.borderLeft = '4px solid #9b59b6';
             
             // Calcular estatísticas
-            const sortedConsumptions = [...consumptions].sort((a, b) => a - b);
+            const sortedConsumptions = consumptionSamples.map(s => s.dailyConsumption).sort((a, b) => a - b);
             const medianConsumption = sortedConsumptions.length % 2 === 0 
                 ? (sortedConsumptions[sortedConsumptions.length/2 - 1] + sortedConsumptions[sortedConsumptions.length/2]) / 2
                 : sortedConsumptions[Math.floor(sortedConsumptions.length/2)];
@@ -1677,25 +1621,24 @@
                     </div>
                     
                     <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Mínimo</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #2ecc71;">${minConsumption.toFixed(2)}</div>
-                        <div style="font-size: 0.85rem;">GB/dia</div>
-                    </div>
-                    
-                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Máximo</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #e74c3c;">${maxConsumption.toFixed(2)}</div>
-                        <div style="font-size: 0.85rem;">GB/dia</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Amostras</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #9b59b6;">${consumptionSamples.length}</div>
+                        <div style="font-size: 0.85rem;">registros válidos</div>
                     </div>
                 </div>
                 
                 <div style="margin-bottom: 20px;">
-                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--text-color);">📈 Amostras de Consumo Histórico:</div>
-                    <div style="max-height: 150px; overflow-y: auto; padding: 10px; background: var(--bg-color); border-radius: 6px;">
-                        ${consumptionSamples.map((sample, index) => `
-                            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.85rem;">
-                                <span>${sample.fromDate} → ${sample.toDate} (${sample.days.toFixed(1)} dias)</span>
-                                <span><strong>${sample.dailyConsumption.toFixed(2)} GB/dia</strong> (${sample.consumptionGB.toFixed(1)} GB total)</span>
+                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--text-color);">📈 Cenários de Projeção (±5%):</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        ${scenarios.map(scenario => `
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">
+                                    ${scenario.dailyConsumption.toFixed(2)} GB/dia
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                    ${scenario.factor === 1.05 ? '+5%' : scenario.factor === 0.95 ? '-5%' : 'base'}
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -1724,8 +1667,8 @@
                     <div style="font-weight: bold; margin-bottom: 10px; color: #2ecc71;">🎯 RESUMO DA ANÁLISE:</div>
                     <div style="font-size: 0.95rem;">
                         <p>• Baseado em <strong>${consumptionSamples.length}</strong> amostras de consumo real</p>
-                        <p>• Variação histórica: <strong>${((maxConsumption - minConsumption) / avgDailyConsumptionGB * 100).toFixed(0)}%</strong> entre mínimo e máximo</p>
-                        <p>• Projeções ajustadas automaticamente conforme novos dados são adicionados</p>
+                        <p>• Cenários ajustados em <strong>±5%</strong> em relação à média histórica</p>
+                        <p>• Projeções atualizadas automaticamente conforme novos dados</p>
                         <p>• Sem estimativas - apenas dados reais do sistema</p>
                     </div>
                 </div>
