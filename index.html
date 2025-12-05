@@ -231,9 +231,33 @@
             width: 100%;
         }
 
-        /* Novo gráfico de todas as métricas */
-        .all-metrics-chart {
-            height: 400px;
+        /* Gráfico de projeção selecionável */
+        .projection-chart-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .projection-chart-btn {
+            padding: 8px 15px;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .projection-chart-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .projection-chart-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         /* Painel de observações */
@@ -259,36 +283,25 @@
             color: var(--text-secondary);
         }
 
-        /* Modo de armazenamento */
-        .storage-mode {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            padding: 15px;
+        /* Status do Firebase */
+        .firebase-status {
             background-color: var(--card-bg);
             border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
             box-shadow: var(--shadow);
-        }
-
-        .mode-btn {
-            padding: 10px 20px;
-            border: 2px solid var(--border-color);
-            background-color: transparent;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            color: var(--text-color);
+            gap: 15px;
+            border-left: 4px solid var(--warning-color);
         }
 
-        .mode-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        .firebase-status.connected {
+            border-left-color: var(--secondary-color);
+        }
+
+        .firebase-status.error {
+            border-left-color: var(--danger-color);
         }
 
         /* Modal de Login */
@@ -332,6 +345,7 @@
             color: var(--text-secondary);
         }
 
+        /* Formulários */
         .form-group {
             margin-bottom: 20px;
         }
@@ -485,7 +499,7 @@
         /* Projeções detalhadas */
         .projection-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -495,7 +509,6 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: var(--shadow);
-            text-align: center;
         }
 
         .projection-period {
@@ -522,6 +535,23 @@
             color: var(--text-secondary);
             margin-top: 30px;
             border-top: 1px solid var(--border-color);
+        }
+
+        /* Notificação de backup */
+        .backup-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1001;
+            transition: transform 0.3s;
         }
 
         /* Responsividade */
@@ -570,6 +600,14 @@
             .capacity-input {
                 flex: 1;
             }
+            
+            .projection-chart-controls {
+                flex-direction: column;
+            }
+            
+            .projection-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
         }
 
         @media (max-width: 480px) {
@@ -615,6 +653,51 @@
         .mb-30 {
             margin-bottom: 30px;
         }
+        
+        .firebase-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .firebase-stats-section {
+            padding: 15px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .table-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .table-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .last-sync {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .critical { color: var(--danger-color); }
+        .warning { color: var(--warning-color); }
+        .attention { color: #f39c12; }
+        .normal { color: var(--secondary-color); }
     </style>
 </head>
 <body>
@@ -635,45 +718,26 @@
             </div>
         </header>
 
+        <!-- Status do Firebase -->
+        <div id="firebaseStatus" class="firebase-status">
+            <div class="alert-icon">📡</div>
+            <div>
+                <strong>Sistema Cloud Firebase:</strong>
+                <span id="firebaseStatusMessage">Conectando ao servidor...</span>
+            </div>
+        </div>
+
         <!-- Configuração de capacidade do disco -->
-        <div id="capacityConfig" class="capacity-config hidden">
+        <div id="capacityConfig" class="capacity-config">
             <div class="capacity-info">
                 <div class="capacity-label">Capacidade Total do Disco D:</div>
-                <div class="capacity-value" id="currentCapacity">200 GB</div>
+                <div class="capacity-value" id="currentCapacity">3000 GB</div>
             </div>
             <div class="capacity-form">
                 <input type="number" id="capacityInput" class="capacity-input" placeholder="Nova capacidade (GB)" min="1" max="10000">
                 <button id="updateCapacityBtn" class="btn btn-secondary">
                     <span>🔄</span> Atualizar
                 </button>
-            </div>
-        </div>
-
-        <!-- Alertas de projeção -->
-        <div id="projectionAlert" class="alert alert-success">
-            <div class="alert-icon">📈</div>
-            <div>
-                <strong>Projeção de espaço em disco:</strong>
-                <span id="projectionMessage">Calculando...</span>
-            </div>
-        </div>
-
-        <!-- Seletor de modo de armazenamento -->
-        <div class="storage-mode">
-            <button id="localModeBtn" class="mode-btn active">
-                <span>📁</span> Modo Local
-            </button>
-            <button id="firebaseModeBtn" class="mode-btn">
-                <span>☁️</span> Modo Firebase
-            </button>
-        </div>
-
-        <!-- Status do Firebase -->
-        <div id="firebaseStatus" class="alert alert-warning hidden">
-            <div class="alert-icon">⚠️</div>
-            <div>
-                <strong>Modo Firebase:</strong>
-                <span id="firebaseStatusMessage">Conectando...</span>
             </div>
         </div>
 
@@ -684,9 +748,9 @@
                     <div class="metric-title">CPU em uso</div>
                     <div class="metric-icon">⚙️</div>
                 </div>
-                <div class="metric-value" id="cpuValue">5.25%</div>
+                <div class="metric-value" id="cpuValue">0.00%</div>
                 <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Estável</span>
+                    <span>↘️</span> <span>Carregando...</span>
                 </div>
             </div>
             
@@ -695,9 +759,9 @@
                     <div class="metric-title">Processos ativos</div>
                     <div class="metric-icon">🔄</div>
                 </div>
-                <div class="metric-value" id="processesValue">133</div>
+                <div class="metric-value" id="processesValue">0</div>
                 <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Normal</span>
+                    <span>↘️</span> <span>Carregando...</span>
                 </div>
             </div>
             
@@ -706,9 +770,9 @@
                     <div class="metric-title">RAM Livre</div>
                     <div class="metric-icon">💾</div>
                 </div>
-                <div class="metric-value" id="ramValue">54.4 GB</div>
+                <div class="metric-value" id="ramValue">0.0 GB</div>
                 <div class="metric-trend trend-up">
-                    <span>↗️</span> <span>Suficiente</span>
+                    <span>↗️</span> <span>Carregando...</span>
                 </div>
             </div>
             
@@ -717,20 +781,20 @@
                     <div class="metric-title">Swap Livre</div>
                     <div class="metric-icon">📊</div>
                 </div>
-                <div class="metric-value" id="swapValue">10.2 GB</div>
+                <div class="metric-value" id="swapValue">0.0 GB</div>
                 <div class="metric-trend trend-up">
-                    <span>↗️</span> <span>Suficiente</span>
+                    <span>↗️</span> <span>Carregando...</span>
                 </div>
             </div>
             
             <div class="metric-card">
                 <div class="metric-header">
-                    <div class="metric-title">Disco D: Livre</div>
+                    <div class="metric-title">Disco D: Livre (%)</div>
                     <div class="metric-icon">💿</div>
                 </div>
-                <div class="metric-value" id="diskValue">61.8 GB</div>
+                <div class="metric-value" id="diskValue">0.0%</div>
                 <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Monitorar</span>
+                    <span>↘️</span> <span>Carregando...</span>
                 </div>
             </div>
             
@@ -739,9 +803,9 @@
                     <div class="metric-title">Última leitura</div>
                     <div class="metric-icon">⏰</div>
                 </div>
-                <div class="metric-value" id="lastUpdate">10/11/2023 14:30</div>
+                <div class="metric-value" id="lastUpdate">--/--/---- --:--</div>
                 <div class="metric-trend">
-                    <span>🔄</span> <span>Atualizado</span>
+                    <span>🔄</span> <span>Carregando...</span>
                 </div>
             </div>
         </div>
@@ -763,16 +827,22 @@
             </div>
         </div>
 
-        <!-- Novo gráfico de todas as métricas -->
+        <!-- Gráfico de projeção selecionável -->
         <div class="chart-card">
-            <h2 class="chart-title">📊 Todas as Métricas do Sistema</h2>
-            <div class="chart-container all-metrics-chart">
-                <canvas id="allMetricsChart"></canvas>
+            <h2 class="chart-title">📊 Gráfico de Projeção do Espaço em Disco (%)</h2>
+            <div class="projection-chart-controls">
+                <button class="projection-chart-btn active" data-range="30">1 Mês</button>
+                <button class="projection-chart-btn" data-range="90">3 Meses</button>
+                <button class="projection-chart-btn" data-range="180">6 Meses</button>
+                <button class="projection-chart-btn" data-range="365">1 Ano</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="projectionLineChart"></canvas>
             </div>
         </div>
 
         <!-- Projeções detalhadas -->
-        <h2 class="chart-title mt-30">📅 Projeções de Espaço em Disco</h2>
+        <h2 class="chart-title mt-30">📅 Projeções de Espaço em Disco (Baseado em Dados Reais)</h2>
         <div class="projection-grid" id="projectionGrid">
             <!-- Projeções serão inseridas aqui via JavaScript -->
         </div>
@@ -783,32 +853,41 @@
             <div class="observations-content">
                 <p><strong>Servidor:</strong> Servidor de Aplicação - Produção</p>
                 <p><strong>Função:</strong> Armazenamento de anexos (PDFs, documentos, imagens)</p>
-                <p><strong>Capacidade total do Disco D:</strong> <span id="obsCapacity">200</span> GB</p>
-                <p><strong>Tendência de crescimento:</strong> Aproximadamente 150-200 MB por dia</p>
-                <p><strong>Recomendações:</strong> Monitorar diariamente o crescimento. Considerar expansão de armazenamento quando o espaço livre atingir 20 GB.</p>
-                <p><strong>Próxima manutenção:</strong> Planejada para 15/12/2023</p>
+                <p><strong>Capacidade total do Disco D:</strong> <span id="obsCapacity">3000</span> GB</p>
+                <p><strong>Tendência de crescimento:</strong> <span id="obsGrowthRate">Calculando...</span></p>
+                <p><strong>Armazenamento:</strong> <span id="storageInfo">Firebase Cloud</span></p>
             </div>
         </div>
 
         <!-- Área administrativa (inicialmente oculta) -->
         <div id="adminPanel" class="hidden">
             <div class="data-table-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 class="chart-title">📋 Histórico de Monitoramento</h2>
-                    <div>
+                <div class="table-header">
+                    <h2 class="chart-title">📋 Histórico de Monitoramento (Firebase)</h2>
+                    <div class="table-controls">
                         <button id="addRecordBtn" class="btn btn-secondary">
                             <span>➕</span> Novo Registro
                         </button>
                         <button id="exportBtn" class="btn btn-outline">
-                            <span>📤</span> Exportar JSON
+                            <span>📤</span> Exportar Backup
                         </button>
                         <button id="importBtn" class="btn btn-outline">
                             <span>📥</span> Importar JSON
+                        </button>
+                        <button id="loadSampleBtn" class="btn btn-warning">
+                            <span>🔄</span> Carregar Dados de Exemplo
                         </button>
                     </div>
                 </div>
                 
                 <input type="file" id="importFile" accept=".json" class="hidden">
+                
+                <div class="table-info">
+                    <span>Total de registros: <strong id="totalRecords">0</strong></span>
+                    <span class="last-sync">
+                        Última atualização: <span id="lastSync">--:--</span>
+                    </span>
+                </div>
                 
                 <table class="data-table">
                     <thead>
@@ -819,7 +898,7 @@
                             <th>Processos</th>
                             <th>RAM Livre (GB)</th>
                             <th>Swap Livre (GB)</th>
-                            <th>Disco D: Livre (GB)</th>
+                            <th>Disco D: Livre (%)</th>
                             <th>Observações</th>
                             <th>Ações</th>
                         </tr>
@@ -828,6 +907,28 @@
                         <!-- Dados serão inseridos aqui via JavaScript -->
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Estatísticas do Firebase -->
+            <div class="chart-card mt-30">
+                <h2 class="chart-title">📊 Estatísticas do Firebase</h2>
+                <div class="firebase-stats-grid">
+                    <div class="firebase-stats-section">
+                        <h3>Uso da Coleção</h3>
+                        <p>Documentos: <strong id="firebaseDocsCount">0</strong></p>
+                        <p>Primeiro registro: <span id="firebaseFirstDate">--/--/----</span></p>
+                        <p>Último registro: <span id="firebaseLastDate">--/--/----</span></p>
+                    </div>
+                    <div class="firebase-stats-section">
+                        <h3>Ações</h3>
+                        <button id="clearAllDataBtn" class="btn btn-danger">
+                            <span>🗑️</span> Limpar Todos os Dados
+                        </button>
+                        <button id="syncNowBtn" class="btn btn-primary">
+                            <span>🔄</span> Sincronizar Agora
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -840,14 +941,14 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="username">Usuário</label>
-                    <input type="text" id="username" class="form-input" placeholder="Digite o usuário" value="admin">
+                    <input type="text" id="username" class="form-input" placeholder="Digite o usuário">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="password">Senha</label>
-                    <input type="password" id="password" class="form-input" placeholder="Digite a senha" value="ZXqwas123">
+                    <input type="password" id="password" class="form-input" placeholder="Digite a senha">
                 </div>
                 <div class="form-group">
-                    <button id="loginBtn" class="btn btn-primary" style="width: 100%;">
+                    <button id="loginBtn" class="btn btn-primary">
                         <span>🔑</span> Entrar
                     </button>
                 </div>
@@ -891,18 +992,18 @@
                         <input type="number" step="0.1" id="inputSwap" class="form-input" placeholder="Ex: 10.2" min="0" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="inputDisk">Espaço livre em Disco D (GB)</label>
-                        <input type="number" step="0.1" id="inputDisk" class="form-input" placeholder="Ex: 61.8" min="0" required>
+                        <label class="form-label" for="inputDisk">Espaço Livre em Disco D (%)</label>
+                        <input type="number" step="0.1" id="inputDisk" class="form-input" placeholder="Ex: 38.0" min="0" max="100" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="inputObservations">Observações (opcional)</label>
                         <textarea id="inputObservations" class="form-input" rows="3" placeholder="Digite observações sobre o servidor..."></textarea>
                     </div>
-                    <div class="form-group" style="display: flex; gap: 10px;">
-                        <button type="submit" id="saveBtn" class="btn btn-secondary" style="flex: 1;">
-                            <span>💾</span> Salvar
+                    <div class="form-actions">
+                        <button type="submit" id="saveBtn" class="btn btn-secondary">
+                            <span>💾</span> Salvar no Firebase
                         </button>
-                        <button type="button" id="cancelBtn" class="btn btn-outline" style="flex: 1;">
+                        <button type="button" id="cancelBtn" class="btn btn-outline">
                             <span>❌</span> Cancelar
                         </button>
                     </div>
@@ -912,13 +1013,23 @@
 
         <!-- Footer -->
         <footer>
-            <p>e-SUS | Monitoramento de Disco de Anexos | Sistema para previsão de expansão de armazenamento</p>
-            <p>📧 Contato: suporte@esusmonitoramento.com | 📞 Suporte: (11) 99999-9999</p>
+            <p>GTI - Gerência de Tecnologia da Informação</p>
         </footer>
     </div>
 
+    <!-- Notificação de backup -->
+    <div id="backupNotification" class="backup-notification hidden">
+        <span>✅</span>
+        <div>
+            <strong>Backup realizado com sucesso!</strong>
+            <div>Arquivo salvo no seu computador</div>
+        </div>
+    </div>
+
     <script>
-        // Configurações do sistema
+        // ============================================
+        // CONFIGURAÇÕES DO SISTEMA
+        // ============================================
         const CONFIG = {
             ADMIN_USER: "admin",
             ADMIN_PASSWORD: "ZXqwas123",
@@ -931,46 +1042,54 @@
                 appId: "1:270924557644:web:920bd5ea08618eebc633e9",
                 measurementId: "G-WECBVPST4T"
             },
-            DEFAULT_DISK_CAPACITY: 200, // Capacidade total do disco D: em GB
-            COLLECTION_NAME: "monitoramento"
+            DEFAULT_DISK_CAPACITY: 3000,
+            COLLECTION_NAME: "monitoramento",
+            CRITICAL_FREE_SPACE: 5,
+            WARNING_FREE_SPACE: 20
         };
 
-        // Estado da aplicação
+        // ============================================
+        // ESTADO DA APLICAÇÃO
+        // ============================================
         const state = {
             isAdmin: false,
             isDarkMode: false,
-            storageMode: "local", // "local" ou "firebase"
             firebaseInitialized: false,
             editingId: null,
             data: [],
-            diskCapacity: CONFIG.DEFAULT_DISK_CAPACITY
+            diskCapacity: CONFIG.DEFAULT_DISK_CAPACITY,
+            projectionChartRange: 30,
+            unsubscribe: null
         };
 
-        // Inicialização do Firebase
+        // ============================================
+        // INICIALIZAÇÃO DO FIREBASE
+        // ============================================
         let firebaseApp = null;
         let firestore = null;
 
-        // Elementos DOM
+        // ============================================
+        // ELEMENTOS DOM
+        // ============================================
         const elements = {
-            // Botões e controles
             themeToggle: document.getElementById('themeToggle'),
             themeIcon: document.getElementById('themeIcon'),
             adminLoginBtn: document.getElementById('adminLoginBtn'),
-            localModeBtn: document.getElementById('localModeBtn'),
-            firebaseModeBtn: document.getElementById('firebaseModeBtn'),
             addRecordBtn: document.getElementById('addRecordBtn'),
             exportBtn: document.getElementById('exportBtn'),
             importBtn: document.getElementById('importBtn'),
             importFile: document.getElementById('importFile'),
-            
-            // Configuração de capacidade
+            loadSampleBtn: document.getElementById('loadSampleBtn'),
+            clearAllDataBtn: document.getElementById('clearAllDataBtn'),
+            syncNowBtn: document.getElementById('syncNowBtn'),
             capacityConfig: document.getElementById('capacityConfig'),
             currentCapacity: document.getElementById('currentCapacity'),
             capacityInput: document.getElementById('capacityInput'),
             updateCapacityBtn: document.getElementById('updateCapacityBtn'),
             obsCapacity: document.getElementById('obsCapacity'),
-            
-            // Modais
+            obsGrowthRate: document.getElementById('obsGrowthRate'),
+            storageInfo: document.getElementById('storageInfo'),
+            projectionChartBtns: document.querySelectorAll('.projection-chart-btn'),
             loginModal: document.getElementById('loginModal'),
             closeLoginModal: document.getElementById('closeLoginModal'),
             loginBtn: document.getElementById('loginBtn'),
@@ -981,8 +1100,6 @@
             dataForm: document.getElementById('dataForm'),
             saveBtn: document.getElementById('saveBtn'),
             cancelBtn: document.getElementById('cancelBtn'),
-            
-            // Campos do formulário
             inputDate: document.getElementById('inputDate'),
             inputTime: document.getElementById('inputTime'),
             inputCpu: document.getElementById('inputCpu'),
@@ -991,41 +1108,51 @@
             inputSwap: document.getElementById('inputSwap'),
             inputDisk: document.getElementById('inputDisk'),
             inputObservations: document.getElementById('inputObservations'),
-            
-            // Painéis
             adminPanel: document.getElementById('adminPanel'),
             firebaseStatus: document.getElementById('firebaseStatus'),
             firebaseStatusMessage: document.getElementById('firebaseStatusMessage'),
-            projectionAlert: document.getElementById('projectionAlert'),
-            projectionMessage: document.getElementById('projectionMessage'),
             projectionGrid: document.getElementById('projectionGrid'),
-            
-            // Métricas
             cpuValue: document.getElementById('cpuValue'),
             processesValue: document.getElementById('processesValue'),
             ramValue: document.getElementById('ramValue'),
             swapValue: document.getElementById('swapValue'),
             diskValue: document.getElementById('diskValue'),
             lastUpdate: document.getElementById('lastUpdate'),
-            
-            // Tabela
             dataTableBody: document.getElementById('dataTableBody'),
-            
-            // Campos de login
+            totalRecords: document.getElementById('totalRecords'),
+            lastSync: document.getElementById('lastSync'),
+            firebaseDocsCount: document.getElementById('firebaseDocsCount'),
+            firebaseFirstDate: document.getElementById('firebaseFirstDate'),
+            firebaseLastDate: document.getElementById('firebaseLastDate'),
             username: document.getElementById('username'),
-            password: document.getElementById('password')
+            password: document.getElementById('password'),
+            backupNotification: document.getElementById('backupNotification')
         };
 
-        // Gráficos
+        // ============================================
+        // GRÁFICOS
+        // ============================================
         let lineChart = null;
         let pieChart = null;
-        let allMetricsChart = null;
+        let projectionLineChart = null;
 
-        // Funções de utilidade
+        // ============================================
+        // FUNÇÕES UTILITÁRIAS
+        // ============================================
         const utils = {
             formatDate: (date) => {
                 const d = new Date(date);
                 return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+            },
+            
+            formatDateTime: (date) => {
+                const d = new Date(date);
+                const day = d.getDate().toString().padStart(2, '0');
+                const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                const year = d.getFullYear();
+                const hours = d.getHours().toString().padStart(2, '0');
+                const minutes = d.getMinutes().toString().padStart(2, '0');
+                return `${day}/${month}/${year} ${hours}:${minutes}`;
             },
             
             formatDateMonthYear: (date) => {
@@ -1068,17 +1195,25 @@
                        parseInt(minutes) >= 0 && parseInt(minutes) < 60;
             },
             
-            calculateDiskUsage: (freeGB) => {
+            calculateDiskUsage: (freePercent) => {
+                const freeGB = (freePercent / 100) * state.diskCapacity;
                 const usedGB = state.diskCapacity - freeGB;
-                const usedPercent = (usedGB / state.diskCapacity) * 100;
-                const freePercent = 100 - usedPercent;
+                const usedPercent = 100 - freePercent;
                 
                 return {
                     usedGB,
                     freeGB,
-                    usedPercent: parseFloat(usedPercent.toFixed(2)),
-                    freePercent: parseFloat(freePercent.toFixed(2))
+                    usedPercent: parseFloat(usedPercent.toFixed(1)),
+                    freePercent: parseFloat(freePercent.toFixed(1))
                 };
+            },
+            
+            gbToPercent: (gb) => {
+                return (gb / state.diskCapacity) * 100;
+            },
+            
+            percentToGB: (percent) => {
+                return (percent / 100) * state.diskCapacity;
             },
             
             generateId: () => {
@@ -1097,233 +1232,119 @@
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
                 ];
                 return months[month];
+            },
+            
+            showNotification: (message, type = 'success') => {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
         };
 
-        // Inicialização do Firebase
+        // ============================================
+        // FUNÇÕES DO FIREBASE
+        // ============================================
         async function initializeFirebase() {
             try {
                 if (!state.firebaseInitialized) {
                     firebaseApp = firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
                     firestore = firebase.firestore();
                     state.firebaseInitialized = true;
-                    console.log("Firebase inicializado com sucesso");
                     
-                    // Atualizar status
-                    elements.firebaseStatusMessage.textContent = "Conectado ao Firebase";
-                    elements.firebaseStatus.classList.remove("alert-warning");
-                    elements.firebaseStatus.classList.add("alert-success");
+                    elements.firebaseStatusMessage.textContent = "Conectado ao Firebase Cloud";
+                    elements.firebaseStatus.classList.remove("error");
+                    elements.firebaseStatus.classList.add("connected");
                     
+                    console.log("✅ Firebase inicializado com sucesso");
                     return true;
                 }
                 return true;
             } catch (error) {
-                console.error("Erro ao inicializar Firebase:", error);
+                console.error("❌ Erro ao inicializar Firebase:", error);
                 elements.firebaseStatusMessage.textContent = "Falha na conexão: " + error.message;
-                elements.firebaseStatus.classList.remove("alert-warning");
-                elements.firebaseStatus.classList.add("alert-danger");
+                elements.firebaseStatus.classList.remove("connected");
+                elements.firebaseStatus.classList.add("error");
                 return false;
             }
         }
 
-        // Carregar dados do armazenamento atual
-        async function loadData() {
-            if (state.storageMode === "local") {
-                loadLocalData();
-            } else {
-                await loadFirebaseData();
-            }
-        }
-
-        // Carregar dados do localStorage
-        function loadLocalData() {
-            const savedData = localStorage.getItem('esus_monitoramento');
-            const savedCapacity = localStorage.getItem('esus_disk_capacity');
-            
-            if (savedCapacity) {
-                state.diskCapacity = parseInt(savedCapacity);
-                updateCapacityDisplay();
-            }
-            
-            if (savedData) {
-                state.data = JSON.parse(savedData);
-                console.log("Dados carregados do localStorage:", state.data.length, "registros");
-            } else {
-                // Dados de exemplo iniciais
-                state.data = [
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 4.8,
-                        processos: 128,
-                        ramLivre: 55.2,
-                        swapLivre: 10.5,
-                        discoLivre: 64.5,
-                        observacoes: "Servidor estável"
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 5.1,
-                        processos: 130,
-                        ramLivre: 54.8,
-                        swapLivre: 10.4,
-                        discoLivre: 63.9,
-                        observacoes: "Aumento de processos"
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 5.5,
-                        processos: 135,
-                        ramLivre: 54.5,
-                        swapLivre: 10.3,
-                        discoLivre: 63.2,
-                        observacoes: ""
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 5.0,
-                        processos: 132,
-                        ramLivre: 54.7,
-                        swapLivre: 10.3,
-                        discoLivre: 62.8,
-                        observacoes: "Servidor normalizado"
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 5.3,
-                        processos: 134,
-                        ramLivre: 54.6,
-                        swapLivre: 10.2,
-                        discoLivre: 62.3,
-                        observacoes: ""
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                        cpu: 5.2,
-                        processos: 132,
-                        ramLivre: 54.5,
-                        swapLivre: 10.2,
-                        discoLivre: 62.0,
-                        observacoes: "Leitura diária"
-                    },
-                    {
-                        id: utils.generateId(),
-                        timestamp: new Date().toISOString(),
-                        cpu: 5.25,
-                        processos: 133,
-                        ramLivre: 54.4,
-                        swapLivre: 10.2,
-                        discoLivre: 61.8,
-                        observacoes: "Última leitura"
-                    }
-                ];
-                saveLocalData();
-            }
-            
-            updateUI();
-        }
-
-        // Carregar dados do Firebase
-        async function loadFirebaseData() {
+        async function setupFirebaseListener() {
             if (!state.firebaseInitialized) {
                 const initialized = await initializeFirebase();
                 if (!initialized) return;
             }
             
             try {
-                const snapshot = await firestore.collection(CONFIG.COLLECTION_NAME).orderBy('timestamp', 'desc').get();
-                state.data = [];
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    state.data.push(data);
-                });
-                
-                console.log("Dados carregados do Firebase:", state.data.length, "registros");
-                
-                // Se não houver dados no Firebase, carregar do local e migrar
-                if (state.data.length === 0) {
-                    loadLocalData();
-                    await migrateToFirebase();
-                } else {
-                    updateUI();
+                if (state.unsubscribe) {
+                    state.unsubscribe();
                 }
-            } catch (error) {
-                console.error("Erro ao carregar dados do Firebase:", error);
-                elements.firebaseStatusMessage.textContent = "Erro ao carregar dados: " + error.message;
-                elements.firebaseStatus.classList.remove("alert-success");
-                elements.firebaseStatus.classList.add("alert-danger");
-            }
-        }
-
-        // Migrar dados locais para o Firebase
-        async function migrateToFirebase() {
-            if (!state.firebaseInitialized) return;
-            
-            try {
-                for (const record of state.data) {
-                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(record.id).set({
-                        timestamp: record.timestamp,
-                        cpu: record.cpu,
-                        processos: record.processos,
-                        ramLivre: record.ramLivre,
-                        swapLivre: record.swapLivre,
-                        discoLivre: record.discoLivre,
-                        observacoes: record.observacoes || ""
+                
+                state.unsubscribe = firestore.collection(CONFIG.COLLECTION_NAME)
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot((snapshot) => {
+                        state.data = [];
+                        
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            data.id = doc.id;
+                            
+                            if (data.discoLivre > 100) {
+                                data.discoLivre = utils.gbToPercent(data.discoLivre);
+                            }
+                            
+                            state.data.push(data);
+                        });
+                        
+                        console.log(`📥 Dados recebidos do Firebase: ${state.data.length} registros`);
+                        
+                        updateFirebaseStats();
+                        updateUI();
+                        
+                        const now = new Date();
+                        elements.lastSync.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                    }, (error) => {
+                        console.error("❌ Erro no listener do Firebase:", error);
+                        elements.firebaseStatusMessage.textContent = "Erro na sincronização: " + error.message;
+                        elements.firebaseStatus.classList.remove("connected");
+                        elements.firebaseStatus.classList.add("error");
                     });
-                }
-                console.log("Dados migrados para o Firebase");
+                
+                console.log("👂 Listener do Firebase configurado com sucesso");
+                
             } catch (error) {
-                console.error("Erro ao migrar dados para Firebase:", error);
+                console.error("❌ Erro ao configurar listener do Firebase:", error);
             }
         }
 
-        // Salvar dados no armazenamento atual
-        async function saveData(record) {
-            if (state.storageMode === "local") {
-                if (record) {
-                    if (state.editingId) {
-                        // Atualizar registro existente
-                        const index = state.data.findIndex(item => item.id === state.editingId);
-                        if (index !== -1) {
-                            state.data[index] = record;
-                        }
-                        state.editingId = null;
-                    } else {
-                        // Adicionar novo registro
-                        state.data.push(record);
-                    }
-                }
-                saveLocalData();
-            } else {
-                await saveFirebaseData(record);
-            }
+        function updateFirebaseStats() {
+            elements.firebaseDocsCount.textContent = state.data.length;
+            elements.totalRecords.textContent = state.data.length;
             
-            updateUI();
+            if (state.data.length > 0) {
+                const sortedByDate = [...state.data].sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
+                
+                const firstRecord = sortedByDate[0];
+                const lastRecord = sortedByDate[sortedByDate.length - 1];
+                
+                elements.firebaseFirstDate.textContent = utils.formatDate(firstRecord.timestamp);
+                elements.firebaseLastDate.textContent = utils.formatDate(lastRecord.timestamp);
+            } else {
+                elements.firebaseFirstDate.textContent = "--/--/----";
+                elements.firebaseLastDate.textContent = "--/--/----";
+            }
         }
 
-        // Salvar dados no localStorage
-        function saveLocalData() {
-            localStorage.setItem('esus_monitoramento', JSON.stringify(state.data));
-            console.log("Dados salvos no localStorage");
-        }
-
-        // Salvar dados no Firebase
-        async function saveFirebaseData(record) {
+        async function saveData(record) {
             if (!state.firebaseInitialized) {
                 const initialized = await initializeFirebase();
-                if (!initialized) return;
+                if (!initialized) {
+                    alert("Erro: Não foi possível conectar ao Firebase");
+                    return;
+                }
             }
             
             try {
                 if (state.editingId) {
-                    // Atualizar registro existente
                     await firestore.collection(CONFIG.COLLECTION_NAME).doc(state.editingId).update({
                         timestamp: record.timestamp,
                         cpu: record.cpu,
@@ -1333,10 +1354,9 @@
                         discoLivre: record.discoLivre,
                         observacoes: record.observacoes || ""
                     });
-                    console.log("Registro atualizado no Firebase:", state.editingId);
+                    console.log("✅ Registro atualizado no Firebase:", state.editingId);
                     state.editingId = null;
                 } else {
-                    // Adicionar novo registro
                     const id = utils.generateId();
                     record.id = id;
                     await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
@@ -1348,80 +1368,414 @@
                         discoLivre: record.discoLivre,
                         observacoes: record.observacoes || ""
                     });
-                    state.data.unshift(record);
-                    console.log("Registro salvo no Firebase:", id);
+                    console.log("✅ Registro salvo no Firebase:", id);
                 }
+                
+                utils.showNotification("Registro salvo com sucesso no Firebase!");
+                
             } catch (error) {
-                console.error("Erro ao salvar dados no Firebase:", error);
+                console.error("❌ Erro ao salvar dados no Firebase:", error);
                 alert("Erro ao salvar no Firebase: " + error.message);
             }
         }
 
-        // Excluir registro
-        async function deleteRecord(id) {
-            if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+        // ============================================
+        // FUNÇÃO DE PROJEÇÃO BASEADA EM DADOS REAIS
+        // ============================================
+        function calculateDetailedProjections() {
+            if (state.data.length < 2) {
+                elements.projectionGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+                        <h3>Dados insuficientes para projeção</h3>
+                        <p>Adicione mais registros para ver as projeções.</p>
+                    </div>
+                `;
+                return;
+            }
             
-            if (state.storageMode === "local") {
-                state.data = state.data.filter(item => item.id !== id);
-                saveLocalData();
-            } else {
-                try {
-                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).delete();
-                    state.data = state.data.filter(item => item.id !== id);
-                    console.log("Registro excluído do Firebase:", id);
-                } catch (error) {
-                    console.error("Erro ao excluir registro do Firebase:", error);
-                    alert("Erro ao excluir registro: " + error.message);
-                    return;
+            // 1. Dados ordenados por data
+            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // 2. Calcular consumo diário REAL dos dados históricos
+            let totalConsumptionGB = 0;
+            let totalDays = 0;
+            let consumptionSamples = [];
+            
+            for (let i = 0; i < sortedData.length - 1; i++) {
+                const prev = sortedData[i];
+                const curr = sortedData[i + 1];
+                
+                // Calcular diferença em dias
+                const prevDate = new Date(prev.timestamp);
+                const currDate = new Date(curr.timestamp);
+                const timeDiffMs = currDate - prevDate;
+                const daysBetween = timeDiffMs / (1000 * 60 * 60 * 24);
+                
+                // Só considerar intervalos válidos (1-30 dias) e onde houve consumo
+                if (daysBetween >= 1 && daysBetween <= 30 && curr.discoLivre < prev.discoLivre) {
+                    // Calcular consumo em GB
+                    const prevFreeGB = (prev.discoLivre / 100) * state.diskCapacity;
+                    const currFreeGB = (curr.discoLivre / 100) * state.diskCapacity;
+                    const consumptionGB = prevFreeGB - currFreeGB;
+                    
+                    // Consumo diário neste intervalo
+                    const dailyConsumption = consumptionGB / daysBetween;
+                    
+                    totalConsumptionGB += consumptionGB;
+                    totalDays += daysBetween;
+                    consumptionSamples.push({
+                        days: daysBetween,
+                        consumptionGB: consumptionGB,
+                        dailyConsumption: dailyConsumption,
+                        fromDate: utils.formatDate(prev.timestamp),
+                        toDate: utils.formatDate(curr.timestamp)
+                    });
                 }
             }
             
-            updateUI();
+            if (consumptionSamples.length === 0) {
+                elements.projectionGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+                        <h3>Não foi possível calcular projeção</h3>
+                        <p>Os dados não mostram consumo consistente.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 3. Calcular consumo diário médio REAL
+            const avgDailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
+            
+            // 4. Definir 3 cenários baseados na variação histórica
+            const consumptions = consumptionSamples.map(s => s.dailyConsumption);
+            const minConsumption = Math.min(...consumptions);
+            const maxConsumption = Math.max(...consumptions);
+            
+            // Se tivermos poucas amostras, usar variação fixa
+            let pessimisticFactor, optimisticFactor;
+            if (consumptionSamples.length >= 3) {
+                // Usar variação real dos dados
+                const stdDev = Math.sqrt(consumptions.reduce((sq, n) => sq + Math.pow(n - avgDailyConsumptionGB, 2), 0) / consumptions.length);
+                pessimisticFactor = 1 + (stdDev / avgDailyConsumptionGB);
+                optimisticFactor = 1 - (stdDev / avgDailyConsumptionGB);
+            } else {
+                // Usar variação padrão de 15%
+                pessimisticFactor = 1.15;  // +15%
+                optimisticFactor = 0.85;   // -15%
+            }
+            
+            const scenarios = [
+                { 
+                    name: 'Pessimista', 
+                    factor: pessimisticFactor, 
+                    color: '#e74c3c',
+                    description: 'Baseado no máximo histórico',
+                    dailyConsumption: avgDailyConsumptionGB * pessimisticFactor
+                },
+                { 
+                    name: 'Realista', 
+                    factor: 1.00, 
+                    color: '#3498db',
+                    description: 'Média histórica',
+                    dailyConsumption: avgDailyConsumptionGB
+                },
+                { 
+                    name: 'Otimista', 
+                    factor: optimisticFactor, 
+                    color: '#2ecc71',
+                    description: 'Baseado no mínimo histórico',
+                    dailyConsumption: avgDailyConsumptionGB * optimisticFactor
+                }
+            ];
+            
+            // 5. Dados atuais
+            const currentRecord = sortedData[sortedData.length - 1];
+            const currentFreePercent = currentRecord.discoLivre;
+            const currentFreeGB = (currentFreePercent / 100) * state.diskCapacity;
+            const currentUsedPercent = 100 - currentFreePercent;
+            const currentUsedGB = state.diskCapacity - currentFreeGB;
+            
+            // 6. Atualizar observação técnica
+            if (avgDailyConsumptionGB <= 0) {
+                elements.obsGrowthRate.textContent = "Crescimento estável ou inconsistente";
+            } else {
+                elements.obsGrowthRate.textContent = 
+                    `Consumo médio: ${avgDailyConsumptionGB.toFixed(2)} GB/dia ` +
+                    `(baseado em ${consumptionSamples.length} amostras, variação: ${((maxConsumption - minConsumption) / avgDailyConsumptionGB * 100).toFixed(0)}%)`;
+            }
+            
+            // 7. Períodos de projeção
+            const projectionPeriods = [
+                { label: '30 dias', days: 30 },
+                { label: '60 dias', days: 60 },
+                { label: '120 dias', days: 120 },
+                { label: '360 dias', days: 360 }
+            ];
+            
+            // 8. Gerar projeções
+            elements.projectionGrid.innerHTML = "";
+            
+            projectionPeriods.forEach(period => {
+                const periodCard = document.createElement('div');
+                periodCard.className = 'projection-card';
+                periodCard.style.gridColumn = '1 / -1';
+                periodCard.style.marginBottom = '30px';
+                periodCard.style.borderLeft = '4px solid var(--primary-color)';
+                periodCard.style.backgroundColor = 'rgba(52, 152, 219, 0.03)';
+                
+                let scenariosHTML = '';
+                
+                scenarios.forEach(scenario => {
+                    // Calcular consumo total no período
+                    const totalConsumption = scenario.dailyConsumption * period.days;
+                    
+                    // Calcular espaço livre futuro
+                    const projectedFreeGB = Math.max(0.1, currentFreeGB - totalConsumption);
+                    const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
+                    const projectedUsedGB = state.diskCapacity - projectedFreeGB;
+                    const projectedUsedPercent = 100 - projectedFreePercent;
+                    
+                    // Calcular data futura
+                    const futureDate = new Date();
+                    futureDate.setDate(futureDate.getDate() + period.days);
+                    const formattedDate = utils.formatDate(futureDate);
+                    
+                    // Status baseado no espaço livre
+                    let status = '';
+                    let statusClass = '';
+                    if (projectedFreePercent < 5) {
+                        status = 'CRÍTICO';
+                        statusClass = 'critical';
+                    } else if (projectedFreePercent < 10) {
+                        status = 'ALERTA';
+                        statusClass = 'warning';
+                    } else if (projectedFreePercent < 20) {
+                        status = 'ATENÇÃO';
+                        statusClass = 'attention';
+                    } else {
+                        status = 'NORMAL';
+                        statusClass = 'normal';
+                    }
+                    
+                    scenariosHTML += `
+                        <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; 
+                            background: ${scenario.color}15; border-left: 4px solid ${scenario.color};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <strong style="color: ${scenario.color}; font-size: 1.1rem;">${scenario.name}</strong>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${scenario.description}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Consumo diário:</div>
+                                    <strong style="color: ${scenario.color}; font-size: 1.1rem;">
+                                        ${scenario.dailyConsumption.toFixed(2)} GB/dia
+                                    </strong>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Livre</div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedFreePercent < 10 ? '#e74c3c' : projectedFreePercent < 20 ? '#f39c12' : '#2ecc71'}">
+                                        ${projectedFreePercent.toFixed(1)}%
+                                    </div>
+                                    <div style="font-size: 0.9rem;">${projectedFreeGB.toFixed(1)} GB</div>
+                                </div>
+                                
+                                <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Usado</div>
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedUsedPercent > 90 ? '#e74c3c' : projectedUsedPercent > 80 ? '#f39c12' : '#3498db'}">
+                                        ${projectedUsedPercent.toFixed(1)}%
+                                    </div>
+                                    <div style="font-size: 0.9rem;">${projectedUsedGB.toFixed(1)} GB</div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>Consumo no período:</span>
+                                    <strong>${totalConsumption.toFixed(1)} GB</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>Status:</span>
+                                    <strong class="${statusClass}" style="color: ${status === 'CRÍTICO' ? '#e74c3c' : status === 'ALERTA' ? '#f39c12' : status === 'ATENÇÃO' ? '#f39c12' : '#2ecc71'}">
+                                        ${status}
+                                    </strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Data da projeção:</span>
+                                    <strong>${formattedDate}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                periodCard.innerHTML = `
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">
+                            📅 Projeção para ${period.label} (${period.days} dias)
+                        </div>
+                        <div style="font-size: 0.95rem; color: var(--text-secondary);">
+                            Data final: ${utils.formatDate(new Date(Date.now() + period.days * 24 * 60 * 60 * 1000))}
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        ${scenariosHTML}
+                    </div>
+                    
+                    <div style="padding: 12px; background: var(--bg-color); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
+                        <strong>📝 FÓRMULA APLICADA (Baseada em dados reais):</strong><br>
+                        Espaço Livre Futuro = Espaço Atual (${currentFreeGB.toFixed(1)} GB) - (Consumo Diário Médio × ${period.days} dias)<br>
+                        Baseado em ${consumptionSamples.length} amostras históricas com consumo médio de ${avgDailyConsumptionGB.toFixed(2)} GB/dia
+                    </div>
+                `;
+                
+                elements.projectionGrid.appendChild(periodCard);
+            });
+            
+            // 9. Card de análise estatística
+            const statsCard = document.createElement('div');
+            statsCard.className = 'projection-card';
+            statsCard.style.gridColumn = '1 / -1';
+            statsCard.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
+            statsCard.style.borderLeft = '4px solid #9b59b6';
+            
+            // Calcular estatísticas
+            const sortedConsumptions = [...consumptions].sort((a, b) => a - b);
+            const medianConsumption = sortedConsumptions.length % 2 === 0 
+                ? (sortedConsumptions[sortedConsumptions.length/2 - 1] + sortedConsumptions[sortedConsumptions.length/2]) / 2
+                : sortedConsumptions[Math.floor(sortedConsumptions.length/2)];
+            
+            // Calcular dias até esgotamento para cada cenário
+            let daysToDepletion = {};
+            scenarios.forEach(scenario => {
+                if (scenario.dailyConsumption > 0) {
+                    daysToDepletion[scenario.name] = Math.floor(currentFreeGB / scenario.dailyConsumption);
+                }
+            });
+            
+            statsCard.innerHTML = `
+                <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: #9b59b6; text-align: center;">
+                    📊 ANÁLISE ESTATÍSTICA DOS DADOS HISTÓRICOS
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Média</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #3498db;">${avgDailyConsumptionGB.toFixed(2)}</div>
+                        <div style="font-size: 0.85rem;">GB/dia</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Mediana</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #2ecc71;">${medianConsumption.toFixed(2)}</div>
+                        <div style="font-size: 0.85rem;">GB/dia</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Mínimo</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #2ecc71;">${minConsumption.toFixed(2)}</div>
+                        <div style="font-size: 0.85rem;">GB/dia</div>
+                    </div>
+                    
+                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Máximo</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #e74c3c;">${maxConsumption.toFixed(2)}</div>
+                        <div style="font-size: 0.85rem;">GB/dia</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--text-color);">📈 Amostras de Consumo Histórico:</div>
+                    <div style="max-height: 150px; overflow-y: auto; padding: 10px; background: var(--bg-color); border-radius: 6px;">
+                        ${consumptionSamples.map((sample, index) => `
+                            <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.85rem;">
+                                <span>${sample.fromDate} → ${sample.toDate} (${sample.days.toFixed(1)} dias)</span>
+                                <span><strong>${sample.dailyConsumption.toFixed(2)} GB/dia</strong> (${sample.consumptionGB.toFixed(1)} GB total)</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div style="padding: 15px; background: rgba(52, 152, 219, 0.1); border-radius: 8px;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">📅 PREVISÃO DE ESGOTAMENTO DO DISCO:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        ${scenarios.map(scenario => `
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">
+                                    ${daysToDepletion[scenario.name] || '∞'} dias
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                    ${daysToDepletion[scenario.name] ? 
+                                        `~${Math.floor(daysToDepletion[scenario.name]/30)} meses` : 
+                                        'Estável'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; border-left: 4px solid #2ecc71;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #2ecc71;">🎯 RESUMO DA ANÁLISE:</div>
+                    <div style="font-size: 0.95rem;">
+                        <p>• Baseado em <strong>${consumptionSamples.length}</strong> amostras de consumo real</p>
+                        <p>• Variação histórica: <strong>${((maxConsumption - minConsumption) / avgDailyConsumptionGB * 100).toFixed(0)}%</strong> entre mínimo e máximo</p>
+                        <p>• Projeções ajustadas automaticamente conforme novos dados são adicionados</p>
+                        <p>• Sem estimativas - apenas dados reais do sistema</p>
+                    </div>
+                </div>
+            `;
+            
+            elements.projectionGrid.appendChild(statsCard);
         }
 
-        // Atualizar a interface do usuário
+        // ============================================
+        // FUNÇÕES DE INTERFACE
+        // ============================================
         function updateUI() {
-            // Ordenar dados por data (mais recente primeiro)
-            state.data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const displayData = [...state.data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
-            // Atualizar métricas com os dados mais recentes
-            if (state.data.length > 0) {
-                const latest = state.data[0];
-                elements.cpuValue.textContent = `${latest.cpu}%`;
+            if (displayData.length > 0) {
+                const latest = displayData[0];
+                elements.cpuValue.textContent = `${latest.cpu.toFixed(2)}%`;
                 elements.processesValue.textContent = latest.processos;
-                elements.ramValue.textContent = `${latest.ramLivre} GB`;
-                elements.swapValue.textContent = `${latest.swapLivre} GB`;
-                elements.diskValue.textContent = `${latest.discoLivre} GB`;
+                elements.ramValue.textContent = `${latest.ramLivre.toFixed(1)} GB`;
+                elements.swapValue.textContent = `${latest.swapLivre.toFixed(1)} GB`;
+                elements.diskValue.textContent = `${latest.discoLivre.toFixed(1)}%`;
                 elements.lastUpdate.textContent = `${utils.formatDate(latest.timestamp)} ${utils.formatTime(latest.timestamp)}`;
             }
             
-            // Atualizar tabela de dados (se estiver no painel admin)
             if (state.isAdmin) {
                 updateDataTable();
             }
             
-            // Atualizar gráficos
+            calculateDetailedProjections();
             updateCharts();
-            
-            // Calcular e exibir projeções
-            calculateProjections();
+            updateProjectionChart();
         }
 
-        // Atualizar tabela de dados
         function updateDataTable() {
             elements.dataTableBody.innerHTML = "";
             
-            state.data.forEach(record => {
+            const displayData = [...state.data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            displayData.forEach(record => {
                 const row = document.createElement('tr');
+                const diskUsage = utils.calculateDiskUsage(record.discoLivre);
                 
                 row.innerHTML = `
                     <td>${utils.formatDate(record.timestamp)}</td>
                     <td>${utils.formatTime(record.timestamp)}</td>
-                    <td>${record.cpu}%</td>
+                    <td>${record.cpu.toFixed(2)}%</td>
                     <td>${record.processos}</td>
-                    <td>${record.ramLivre} GB</td>
-                    <td>${record.swapLivre} GB</td>
-                    <td>${record.discoLivre} GB</td>
+                    <td>${record.ramLivre.toFixed(1)} GB</td>
+                    <td>${record.swapLivre.toFixed(1)} GB</td>
+                    <td>${record.discoLivre.toFixed(1)}%</td>
                     <td>${record.observacoes || ""}</td>
                     <td>
                         <div class="action-buttons">
@@ -1438,7 +1792,6 @@
                 elements.dataTableBody.appendChild(row);
             });
             
-            // Adicionar event listeners aos botões de ação
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', () => editRecord(btn.dataset.id));
             });
@@ -1448,125 +1801,73 @@
             });
         }
 
-        // Atualizar gráficos
+        async function deleteRecord(id) {
+            if (!confirm("Tem certeza que deseja excluir este registro do Firebase?")) return;
+            
+            try {
+                await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).delete();
+                console.log("✅ Registro excluído do Firebase:", id);
+                utils.showNotification("Registro excluído com sucesso!");
+            } catch (error) {
+                console.error("❌ Erro ao excluir registro do Firebase:", error);
+                alert("Erro ao excluir registro: " + error.message);
+            }
+        }
+
+        async function clearAllData() {
+            if (!confirm("⚠️ ATENÇÃO: Esta ação irá excluir TODOS os dados do Firebase. Tem certeza?")) return;
+            
+            try {
+                const snapshot = await firestore.collection(CONFIG.COLLECTION_NAME).get();
+                const batch = firestore.batch();
+                
+                snapshot.docs.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                console.log("✅ Todos os dados foram excluídos do Firebase");
+                utils.showNotification("Todos os dados foram excluídos do Firebase!");
+                
+            } catch (error) {
+                console.error("❌ Erro ao limpar dados do Firebase:", error);
+                alert("Erro ao limpar dados: " + error.message);
+            }
+        }
+
         function updateCharts() {
-            // Ordenar dados por data (mais antigo primeiro para gráfico)
             const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             
             if (sortedData.length === 0) return;
             
-            // Preparar dados para o gráfico de linha
             const labels = sortedData.map(record => utils.formatDate(record.timestamp));
-            const diskFreeData = sortedData.map(record => record.discoLivre);
+            const diskPercentData = sortedData.map(record => parseFloat(record.discoLivre.toFixed(1)));
             
-            // Calcular crescimento em MB por dia
-            const growthData = [];
-            for (let i = 1; i < sortedData.length; i++) {
-                const prev = sortedData[i-1].discoLivre;
-                const curr = sortedData[i].discoLivre;
-                const growthMB = (prev - curr) * 1024; // Converter GB para MB
-                growthData.push(growthMB);
-            }
-            // Adicionar um valor inicial para manter o mesmo tamanho
-            if (growthData.length > 0) {
-                growthData.unshift(growthData[0]);
-            }
-            
-            // Atualizar ou criar gráfico de linha
             const lineCtx = document.getElementById('lineChart').getContext('2d');
-            
-            if (lineChart) {
-                lineChart.destroy();
-            }
+            if (lineChart) lineChart.destroy();
             
             lineChart = new Chart(lineCtx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'Espaço Livre (GB)',
-                            data: diskFreeData,
-                            borderColor: '#3498db',
-                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Crescimento Diário (MB)',
-                            data: growthData,
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y1'
-                        }
-                    ]
+                    datasets: [{
+                        label: 'Espaço Livre (%)',
+                        data: diskPercentData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Espaço Livre (GB)'
-                            },
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Crescimento (MB)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    }
-                }
+                options: getLineChartOptions()
             });
             
-            // Atualizar ou criar gráfico de pizza
             const latest = sortedData[sortedData.length - 1];
             const diskUsage = utils.calculateDiskUsage(latest.discoLivre);
-            
             const pieCtx = document.getElementById('pieChart').getContext('2d');
             
-            if (pieChart) {
-                pieChart.destroy();
-            }
+            if (pieChart) pieChart.destroy();
             
             pieChart = new Chart(pieCtx, {
                 type: 'pie',
@@ -1585,284 +1886,61 @@
                         borderWidth: 2
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    return `${label}: ${value}% (${label === 'Usado' ? diskUsage.usedGB.toFixed(1) : diskUsage.freeGB.toFixed(1)} GB)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Atualizar ou criar gráfico de todas as métricas
-            updateAllMetricsChart(sortedData, labels);
-        }
-
-        // Atualizar gráfico de todas as métricas
-        function updateAllMetricsChart(data, labels) {
-            const allMetricsCtx = document.getElementById('allMetricsChart').getContext('2d');
-            
-            if (allMetricsChart) {
-                allMetricsChart.destroy();
-            }
-            
-            // Preparar dados para todas as métricas
-            const cpuData = data.map(record => record.cpu);
-            const processesData = data.map(record => record.processos);
-            const ramData = data.map(record => record.ramLivre);
-            const swapData = data.map(record => record.swapLivre);
-            const diskData = data.map(record => record.discoLivre);
-            
-            allMetricsChart = new Chart(allMetricsCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'CPU (%)',
-                            data: cpuData,
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Processos',
-                            data: processesData,
-                            borderColor: '#9b59b6',
-                            backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y1'
-                        },
-                        {
-                            label: 'RAM Livre (GB)',
-                            data: ramData,
-                            borderColor: '#3498db',
-                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y2'
-                        },
-                        {
-                            label: 'Swap Livre (GB)',
-                            data: swapData,
-                            borderColor: '#f39c12',
-                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y3'
-                        },
-                        {
-                            label: 'Disco D: Livre (GB)',
-                            data: diskData,
-                            borderColor: '#2ecc71',
-                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.4,
-                            yAxisID: 'y4'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'CPU (%)'
-                            },
-                            min: 0,
-                            max: 100,
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Processos'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        },
-                        y2: {
-                            type: 'linear',
-                            display: false,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'RAM Livre (GB)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        },
-                        y3: {
-                            type: 'linear',
-                            display: false,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Swap Livre (GB)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        },
-                        y4: {
-                            type: 'linear',
-                            display: false,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Disco Livre (GB)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    }
-                }
+                options: getPieChartOptions(diskUsage)
             });
         }
 
-        // Calcular projeções
-        function calculateProjections() {
-            if (state.data.length < 2) {
-                elements.projectionMessage.textContent = "Dados insuficientes para projeção";
-                elements.projectionGrid.innerHTML = "";
+        function updateProjectionChart() {
+            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            if (sortedData.length < 3) {
+                const ctx = document.getElementById('projectionLineChart').getContext('2d');
+                if (projectionLineChart) projectionLineChart.destroy();
+                
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Adicione pelo menos 3 registros para ver o gráfico', ctx.canvas.width / 2, ctx.canvas.height / 2);
                 return;
             }
             
-            // Ordenar dados por data (mais antigo primeiro)
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - state.projectionChartRange);
             
-            // Calcular taxa média de consumo diário (em GB)
-            const oldest = sortedData[0];
-            const newest = sortedData[sortedData.length - 1];
+            const filteredData = sortedData.filter(record => 
+                new Date(record.timestamp) >= cutoffDate
+            );
             
-            const daysDiff = (new Date(newest.timestamp) - new Date(oldest.timestamp)) / (1000 * 60 * 60 * 24);
-            const gbConsumed = oldest.discoLivre - newest.discoLivre;
-            const dailyConsumption = gbConsumed / daysDiff;
+            if (filteredData.length === 0) return;
             
-            // Calcular dias até o disco ficar cheio (considerando 5GB como limite mínimo seguro)
-            const safeLimit = 5; // GB
-            const daysUntilFull = (newest.discoLivre - safeLimit) / dailyConsumption;
+            const labels = filteredData.map(record => utils.formatDate(record.timestamp));
+            const diskPercentData = filteredData.map(record => parseFloat(record.discoLivre.toFixed(1)));
             
-            // Calcular datas de projeção
-            const projectionPeriods = [
-                { label: '1 Mês', days: 30 },
-                { label: '3 Meses', days: 90 },
-                { label: '6 Meses', days: 180 },
-                { label: '1 Ano', days: 365 },
-                { label: '2 Anos', days: 730 }
-            ];
+            const ctx = document.getElementById('projectionLineChart').getContext('2d');
+            if (projectionLineChart) projectionLineChart.destroy();
             
-            // Gerar cards de projeção
-            elements.projectionGrid.innerHTML = "";
-            
-            projectionPeriods.forEach(period => {
-                const projectionDate = new Date();
-                projectionDate.setDate(projectionDate.getDate() + period.days);
-                
-                const projectedFreeSpace = Math.max(0, newest.discoLivre - (dailyConsumption * period.days));
-                const diskUsage = utils.calculateDiskUsage(projectedFreeSpace);
-                
-                const month = utils.getMonthName(projectionDate.getMonth());
-                const year = projectionDate.getFullYear();
-                
-                const card = document.createElement('div');
-                card.className = 'projection-card';
-                
-                let alertClass = '';
-                if (diskUsage.freePercent < 10) {
-                    alertClass = 'trend-up';
-                } else if (diskUsage.freePercent < 30) {
-                    alertClass = 'trend-down';
-                }
-                
-                card.innerHTML = `
-                    <div class="projection-period">${period.label}</div>
-                    <div class="projection-date">${month}/${year}</div>
-                    <div class="projection-disk ${alertClass}">${projectedFreeSpace.toFixed(1)} GB Livres</div>
-                    <div style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">
-                        ${diskUsage.freePercent.toFixed(1)}% livre
-                    </div>
-                `;
-                
-                elements.projectionGrid.appendChild(card);
+            projectionLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Espaço Livre (%)',
+                        data: diskPercentData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getLineChartOptions()
             });
-            
-            // Determinar nível de alerta
-            let alertLevel = "success";
-            let alertMessage = "";
-            
-            if (daysUntilFull > 180) {
-                alertLevel = "success";
-                alertMessage = `Disco durará mais de 6 meses (${Math.round(daysUntilFull)} dias). Consumo diário: ${dailyConsumption.toFixed(2)} GB/dia.`;
-            } else if (daysUntilFull > 60) {
-                alertLevel = "warning";
-                alertMessage = `Disco durará aproximadamente ${Math.round(daysUntilFull)} dias (${Math.round(daysUntilFull/30)} meses). Consumo diário: ${dailyConsumption.toFixed(2)} GB/dia. Monitorar!`;
-            } else {
-                alertLevel = "danger";
-                alertMessage = `ALERTA: Disco poderá esgotar em ${Math.round(daysUntilFull)} dias! Consumo diário: ${dailyConsumption.toFixed(2)} GB/dia. Planejar expansão urgente!`;
-            }
-            
-            // Atualizar alerta
-            elements.projectionMessage.textContent = alertMessage;
-            elements.projectionAlert.className = `alert alert-${alertLevel}`;
         }
 
-        // Atualizar capacidade do disco
+        // ============================================
+        // FUNÇÕES AUXILIARES
+        // ============================================
         function updateDiskCapacity() {
             const newCapacity = parseInt(elements.capacityInput.value);
             
@@ -1876,22 +1954,18 @@
             
             updateCapacityDisplay();
             updateUI();
-            
             elements.capacityInput.value = "";
             
-            alert(`Capacidade do disco D: atualizada para ${newCapacity} GB.`);
+            alert(`✅ Capacidade do disco D: atualizada para ${newCapacity} GB.`);
         }
 
-        // Atualizar exibição da capacidade
         function updateCapacityDisplay() {
             elements.currentCapacity.textContent = `${state.diskCapacity} GB`;
             elements.obsCapacity.textContent = state.diskCapacity;
         }
 
-        // Abrir modal de edição
         function openEditModal(record = null) {
             if (record) {
-                // Modo edição
                 elements.editModalTitle.textContent = "✏️ Editar Registro";
                 state.editingId = record.id;
                 
@@ -1901,10 +1975,9 @@
                 elements.inputProcesses.value = record.processos;
                 elements.inputRam.value = record.ramLivre;
                 elements.inputSwap.value = record.swapLivre;
-                elements.inputDisk.value = record.discoLivre;
+                elements.inputDisk.value = record.discoLivre.toFixed(1);
                 elements.inputObservations.value = record.observacoes || "";
             } else {
-                // Modo adição
                 elements.editModalTitle.textContent = "➕ Adicionar Registro";
                 state.editingId = null;
                 
@@ -1922,45 +1995,53 @@
             elements.editModal.style.display = "flex";
         }
 
-        // Editar registro
         function editRecord(id) {
             const record = state.data.find(item => item.id === id);
-            if (record) {
-                openEditModal(record);
-            }
+            if (record) openEditModal(record);
         }
 
-        // Exportar dados para JSON
         function exportToJSON() {
             const dataToExport = {
                 data: state.data,
-                diskCapacity: state.diskCapacity,
-                exportDate: new Date().toISOString()
+                config: {
+                    diskCapacity: state.diskCapacity,
+                    lastBackup: new Date().toISOString(),
+                    version: "1.0.0"
+                },
+                metadata: {
+                    totalRecords: state.data.length
+                }
             };
             
             const dataStr = JSON.stringify(dataToExport, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
-            const exportFileDefaultName = `esus_monitoramento_${new Date().toISOString().slice(0, 10)}.json`;
+            const exportFileDefaultName = `esus_monitoramento_backup_${new Date().toISOString().slice(0, 10)}.json`;
             
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', exportFileDefaultName);
             linkElement.click();
+            
+            showBackupNotification();
         }
 
-        // Importar dados de JSON
+        function showBackupNotification() {
+            elements.backupNotification.classList.remove('hidden');
+            setTimeout(() => {
+                elements.backupNotification.classList.add('hidden');
+            }, 3000);
+        }
+
         function importFromJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
                     if (importedData.data && Array.isArray(importedData.data) && importedData.data.length > 0) {
-                        // Validar estrutura dos dados
                         const isValid = importedData.data.every(item => 
                             item.timestamp && 
                             typeof item.cpu === 'number' &&
@@ -1970,28 +2051,50 @@
                             typeof item.discoLivre === 'number'
                         );
                         
-                        if (isValid) {
-                            // Adicionar IDs aos registros se não existirem
-                            importedData.data.forEach(item => {
-                                if (!item.id) {
-                                    item.id = utils.generateId();
-                                }
-                            });
-                            
-                            state.data = importedData.data;
-                            
-                            // Atualizar capacidade se estiver no arquivo
-                            if (importedData.diskCapacity) {
-                                state.diskCapacity = importedData.diskCapacity;
-                                localStorage.setItem('esus_disk_capacity', state.diskCapacity.toString());
-                                updateCapacityDisplay();
-                            }
-                            
-                            saveData();
-                            alert(`Dados importados com sucesso: ${importedData.data.length} registros`);
-                        } else {
+                        if (!isValid) {
                             alert("Arquivo JSON com formato inválido!");
+                            return;
                         }
+                        
+                        if (!confirm(`Deseja importar ${importedData.data.length} registros para o Firebase?`)) {
+                            return;
+                        }
+                        
+                        let successCount = 0;
+                        let errorCount = 0;
+                        
+                        for (const item of importedData.data) {
+                            try {
+                                const id = item.id || utils.generateId();
+                                let discoLivre = item.discoLivre;
+                                
+                                if (discoLivre > 100) {
+                                    discoLivre = utils.gbToPercent(discoLivre);
+                                }
+                                
+                                await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
+                                    timestamp: item.timestamp,
+                                    cpu: item.cpu,
+                                    processos: item.processos,
+                                    ramLivre: item.ramLivre,
+                                    swapLivre: item.swapLivre,
+                                    discoLivre: discoLivre,
+                                    observacoes: item.observacoes || ""
+                                });
+                                successCount++;
+                            } catch (error) {
+                                errorCount++;
+                            }
+                        }
+                        
+                        if (importedData.config && importedData.config.diskCapacity) {
+                            state.diskCapacity = importedData.config.diskCapacity;
+                            localStorage.setItem('esus_disk_capacity', state.diskCapacity.toString());
+                            updateCapacityDisplay();
+                        }
+                        
+                        alert(`✅ Importação concluída!\n\nSucesso: ${successCount} registros\nErros: ${errorCount} registros`);
+                        
                     } else {
                         alert("Arquivo JSON vazio ou inválido!");
                     }
@@ -1999,40 +2102,109 @@
                     alert("Erro ao ler arquivo JSON: " + error.message);
                 }
                 
-                // Resetar input de arquivo
                 elements.importFile.value = "";
             };
             
             reader.readAsText(file);
         }
 
-        // Alternar modo de armazenamento
-        async function toggleStorageMode(mode) {
-            if (mode === state.storageMode) return;
+        async function loadSampleData() {
+            if (!confirm("Deseja carregar dados de exemplo no Firebase?")) return;
             
-            state.storageMode = mode;
-            
-            // Atualizar botões
-            if (mode === "local") {
-                elements.localModeBtn.classList.add("active");
-                elements.firebaseModeBtn.classList.remove("active");
-                elements.firebaseStatus.classList.add("hidden");
-            } else {
-                elements.localModeBtn.classList.remove("active");
-                elements.firebaseModeBtn.classList.add("active");
-                elements.firebaseStatus.classList.remove("hidden");
-                
-                // Inicializar Firebase se necessário
-                if (!state.firebaseInitialized) {
-                    await initializeFirebase();
+            const sampleData = [
+                {
+                    timestamp: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.2,
+                    processos: 120,
+                    ramLivre: 58.0,
+                    swapLivre: 11.0,
+                    discoLivre: 45.0,
+                    observacoes: "Início do monitoramento"
+                },
+                {
+                    timestamp: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.3,
+                    processos: 122,
+                    ramLivre: 57.5,
+                    swapLivre: 10.9,
+                    discoLivre: 43.5,
+                    observacoes: ""
+                },
+                {
+                    timestamp: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.4,
+                    processos: 124,
+                    ramLivre: 57.0,
+                    swapLivre: 10.8,
+                    discoLivre: 42.0,
+                    observacoes: "Crescimento consistente"
+                },
+                {
+                    timestamp: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.5,
+                    processos: 125,
+                    ramLivre: 56.5,
+                    swapLivre: 10.7,
+                    discoLivre: 40.5,
+                    observacoes: ""
+                },
+                {
+                    timestamp: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.6,
+                    processos: 126,
+                    ramLivre: 56.0,
+                    swapLivre: 10.6,
+                    discoLivre: 39.0,
+                    observacoes: "Leitura mensal"
+                },
+                {
+                    timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    cpu: 4.7,
+                    processos: 128,
+                    ramLivre: 55.5,
+                    swapLivre: 10.5,
+                    discoLivre: 37.5,
+                    observacoes: ""
+                },
+                {
+                    timestamp: new Date().toISOString(),
+                    cpu: 4.8,
+                    processos: 130,
+                    ramLivre: 55.0,
+                    swapLivre: 10.4,
+                    discoLivre: 36.0,
+                    observacoes: "Última leitura - 64% usado"
                 }
-            }
+            ];
             
-            // Recarregar dados do novo modo
-            await loadData();
+            try {
+                let successCount = 0;
+                
+                for (const record of sampleData) {
+                    const id = utils.generateId();
+                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
+                        timestamp: record.timestamp,
+                        cpu: record.cpu,
+                        processos: record.processos,
+                        ramLivre: record.ramLivre,
+                        swapLivre: record.swapLivre,
+                        discoLivre: record.discoLivre,
+                        observacoes: record.observacoes || ""
+                    });
+                    successCount++;
+                }
+                
+                alert(`✅ ${successCount} registros de exemplo carregados com sucesso no Firebase!`);
+                
+            } catch (error) {
+                console.error("❌ Erro ao carregar dados de exemplo:", error);
+                alert("Erro ao carregar dados de exemplo: " + error.message);
+            }
         }
 
-        // Alternar tema claro/escuro
+        // ============================================
+        // FUNÇÕES DE TEMA E AUTENTICAÇÃO
+        // ============================================
         function toggleTheme() {
             state.isDarkMode = !state.isDarkMode;
             
@@ -2044,13 +2216,11 @@
                 elements.themeIcon.textContent = "🌙";
             }
             
-            // Atualizar gráficos com novas cores
             if (lineChart) lineChart.update();
             if (pieChart) pieChart.update();
-            if (allMetricsChart) allMetricsChart.update();
+            if (projectionLineChart) projectionLineChart.update();
         }
 
-        // Efetuar login
         function login() {
             const username = elements.username.value;
             const password = elements.password.value;
@@ -2058,29 +2228,27 @@
             if (username === CONFIG.ADMIN_USER && password === CONFIG.ADMIN_PASSWORD) {
                 state.isAdmin = true;
                 elements.adminPanel.classList.remove("hidden");
-                elements.capacityConfig.classList.remove("hidden");
                 elements.loginModal.style.display = "none";
                 elements.loginError.classList.add("hidden");
                 elements.adminLoginBtn.innerHTML = '<span>🚪</span> Sair';
                 
-                // Atualizar tabela
                 updateDataTable();
+                updateFirebaseStats();
             } else {
                 elements.loginError.classList.remove("hidden");
             }
         }
 
-        // Logout
         function logout() {
             state.isAdmin = false;
             elements.adminPanel.classList.add("hidden");
-            elements.capacityConfig.classList.add("hidden");
             elements.adminLoginBtn.innerHTML = '<span>🔐</span> Acesso Administrativo';
         }
 
-        // Inicializar máscaras para data e hora
+        // ============================================
+        // FUNÇÕES DE VALIDAÇÃO E FORMULÁRIO
+        // ============================================
         function initializeMasks() {
-            // Máscara para data (DD/MM/AAAA)
             elements.inputDate.addEventListener('input', function(e) {
                 let value = e.target.value.replace(/\D/g, '');
                 
@@ -2094,7 +2262,6 @@
                 e.target.value = value;
             });
             
-            // Máscara para hora (HH:MM)
             elements.inputTime.addEventListener('input', function(e) {
                 let value = e.target.value.replace(/\D/g, '');
                 
@@ -2106,7 +2273,6 @@
             });
         }
 
-        // Validar formulário
         function validateForm() {
             const date = elements.inputDate.value;
             const time = elements.inputTime.value;
@@ -2116,57 +2282,109 @@
             const swap = parseFloat(elements.inputSwap.value);
             const disk = parseFloat(elements.inputDisk.value);
             
-            // Validar data
             if (!utils.validateDate(date)) {
                 alert("Data inválida! Use o formato DD/MM/AAAA.");
                 return false;
             }
             
-            // Validar hora
             if (!utils.validateTime(time)) {
                 alert("Hora inválida! Use o formato HH:MM.");
                 return false;
             }
             
-            // Validar CPU (0-100%)
             if (isNaN(cpu) || cpu < 0 || cpu > 100) {
                 alert("CPU deve ser um valor entre 0 e 100%.");
                 return false;
             }
             
-            // Validar processos
             if (isNaN(processes) || processes < 0) {
                 alert("Processos deve ser um número positivo.");
                 return false;
             }
             
-            // Validar RAM
             if (isNaN(ram) || ram < 0) {
                 alert("RAM livre deve ser um número positivo.");
                 return false;
             }
             
-            // Validar Swap
             if (isNaN(swap) || swap < 0) {
                 alert("Swap livre deve ser um número positivo.");
                 return false;
             }
             
-            // Validar Disco
-            if (isNaN(disk) || disk < 0 || disk > state.diskCapacity) {
-                alert(`Disco livre deve ser um número entre 0 e ${state.diskCapacity} GB.`);
+            if (isNaN(disk) || disk < 0 || disk > 100) {
+                alert("Disco livre deve ser um valor entre 0 e 100%.");
                 return false;
             }
             
             return true;
         }
 
-        // Event Listeners
+        // ============================================
+        // FUNÇÕES AUXILIARES DE GRÁFICOS
+        // ============================================
+        function getLineChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Espaço Livre (%)'
+                        },
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        }
+                    }
+                }
+            };
+        }
+
+        function getPieChartOptions(diskUsage) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}% (${label === 'Usado' ? diskUsage.usedGB.toFixed(1) : diskUsage.freeGB.toFixed(1)} GB)`;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
         function setupEventListeners() {
-            // Alternar tema
             elements.themeToggle.addEventListener('click', toggleTheme);
             
-            // Login administrativo
             elements.adminLoginBtn.addEventListener('click', () => {
                 if (state.isAdmin) {
                     logout();
@@ -2175,45 +2393,44 @@
                 }
             });
             
-            // Fechar modal de login
             elements.closeLoginModal.addEventListener('click', () => {
                 elements.loginModal.style.display = "none";
                 elements.loginError.classList.add("hidden");
             });
             
-            // Botão de login
             elements.loginBtn.addEventListener('click', login);
             
-            // Enter no campo de senha
             elements.password.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    login();
-                }
+                if (e.key === 'Enter') login();
             });
             
-            // Modo de armazenamento
-            elements.localModeBtn.addEventListener('click', () => toggleStorageMode("local"));
-            elements.firebaseModeBtn.addEventListener('click', () => toggleStorageMode("firebase"));
-            
-            // Atualizar capacidade do disco
             elements.updateCapacityBtn.addEventListener('click', updateDiskCapacity);
+            
             elements.capacityInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    updateDiskCapacity();
-                }
+                if (e.key === 'Enter') updateDiskCapacity();
             });
             
-            // Adicionar registro
+            elements.projectionChartBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    elements.projectionChartBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state.projectionChartRange = parseInt(this.dataset.range);
+                    updateProjectionChart();
+                });
+            });
+            
             elements.addRecordBtn.addEventListener('click', () => openEditModal());
-            
-            // Exportar dados
             elements.exportBtn.addEventListener('click', exportToJSON);
-            
-            // Importar dados
             elements.importBtn.addEventListener('click', () => elements.importFile.click());
             elements.importFile.addEventListener('change', importFromJSON);
+            elements.loadSampleBtn.addEventListener('click', loadSampleData);
+            elements.clearAllDataBtn.addEventListener('click', clearAllData);
             
-            // Modal de edição
+            elements.syncNowBtn.addEventListener('click', () => {
+                setupFirebaseListener();
+                alert("Sincronização manual iniciada!");
+            });
+            
             elements.closeEditModal.addEventListener('click', () => {
                 elements.editModal.style.display = "none";
             });
@@ -2222,7 +2439,6 @@
                 elements.editModal.style.display = "none";
             });
             
-            // Submissão do formulário
             elements.dataForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
@@ -2247,7 +2463,6 @@
                 elements.editModal.style.display = "none";
             });
             
-            // Fechar modais ao clicar fora
             window.addEventListener('click', (e) => {
                 if (e.target === elements.loginModal) {
                     elements.loginModal.style.display = "none";
@@ -2259,26 +2474,30 @@
             });
         }
 
-        // Inicialização da aplicação
+        // ============================================
+        // INICIALIZAÇÃO DA APLICAÇÃO
+        // ============================================
         async function init() {
-            console.log("Inicializando sistema de monitoramento e-SUS...");
+            console.log("🚀 Inicializando sistema de monitoramento e-SUS...");
             
-            // Inicializar máscaras
             initializeMasks();
-            
-            // Configurar event listeners
             setupEventListeners();
             
-            // Carregar dados iniciais (modo local por padrão)
-            await loadData();
+            const savedCapacity = localStorage.getItem('esus_disk_capacity');
+            if (savedCapacity) {
+                state.diskCapacity = parseInt(savedCapacity);
+                updateCapacityDisplay();
+            }
             
-            // Atualizar status do Firebase
-            elements.firebaseStatus.classList.add("hidden");
+            elements.storageInfo.textContent = "Firebase Cloud";
             
-            console.log("Sistema inicializado com sucesso!");
+            await initializeFirebase();
+            await setupFirebaseListener();
+            
+            console.log("✅ Sistema inicializado com sucesso!");
+            console.log("📊 Aguardando dados do Firebase...");
         }
 
-        // Iniciar a aplicação quando o DOM estiver carregado
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
