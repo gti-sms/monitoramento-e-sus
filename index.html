@@ -1633,9 +1633,7 @@
                         ${scenarios.map(scenario => `
                             <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
                                 <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">
-                                    ${scenario.dailyConsumption.toFixed(2)} GB/dia
-                                </div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">${scenario.dailyConsumption.toFixed(2)} GB/dia</div>
                                 <div style="font-size: 0.8rem; color: var(--text-secondary);">
                                     ${scenario.factor === 1.05 ? '+5%' : scenario.factor === 0.95 ? '-5%' : 'base'}
                                 </div>
@@ -1650,13 +1648,9 @@
                         ${scenarios.map(scenario => `
                             <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
                                 <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">
-                                    ${daysToDepletion[scenario.name] || '∞'} dias
-                                </div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">${daysToDepletion[scenario.name] || '∞'} dias</div>
                                 <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                                    ${daysToDepletion[scenario.name] ? 
-                                        `~${Math.floor(daysToDepletion[scenario.name]/30)} meses` : 
-                                        'Estável'}
+                                    ${daysToDepletion[scenario.name] ? `~${Math.floor(daysToDepletion[scenario.name]/30)} meses` : 'Estável'}
                                 </div>
                             </div>
                         `).join('')}
@@ -1848,17 +1842,38 @@
                 return;
             }
             
-            const cutoffDate = new Date();
+            // Obter a data mais recente dos dados
+            const latestDataDate = new Date(sortedData[sortedData.length - 1].timestamp);
+            
+            // Calcular a data de corte baseada na data mais recente
+            const cutoffDate = new Date(latestDataDate);
             cutoffDate.setDate(cutoffDate.getDate() - state.projectionChartRange);
             
-            const filteredData = sortedData.filter(record => 
-                new Date(record.timestamp) >= cutoffDate
-            );
+            // Filtrar dados que estão dentro do período selecionado
+            const filteredData = sortedData.filter(record => {
+                const recordDate = new Date(record.timestamp);
+                return recordDate >= cutoffDate;
+            });
             
-            if (filteredData.length === 0) return;
+            if (filteredData.length === 0) {
+                const ctx = document.getElementById('projectionLineChart').getContext('2d');
+                if (projectionLineChart) projectionLineChart.destroy();
+                
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Nenhum dado disponível para os últimos ${state.projectionChartRange} dias`, ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
             
+            // Preparar dados para o gráfico
             const labels = filteredData.map(record => utils.formatDate(record.timestamp));
             const diskPercentData = filteredData.map(record => parseFloat(record.discoLivre.toFixed(1)));
+            
+            // Configurações do gráfico baseadas no tema
+            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+            const gridColor = state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
             
             const ctx = document.getElementById('projectionLineChart').getContext('2d');
             if (projectionLineChart) projectionLineChart.destroy();
@@ -1877,7 +1892,55 @@
                         tension: 0.4
                     }]
                 },
-                options: getLineChartOptions()
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Espaço Livre (%)',
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Espaço Livre: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 
