@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e-SUS | Monitoramento de Disco de Anexos</title>
+    <title>Monitoramento do Servidor | Disco + CPU + RAM</title>
     
     <!-- CDN do Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,6 +32,8 @@
             --secondary-color: #2ecc71;
             --warning-color: #f39c12;
             --danger-color: #e74c3c;
+            --cpu-color: #9b59b6;
+            --ram-color: #1abc9c;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
             --gradient: linear-gradient(135deg, #3498db, #2c3e50);
         }
@@ -47,8 +49,9 @@
             --secondary-color: #2ecc71;
             --warning-color: #f39c12;
             --danger-color: #e74c3c;
+            --cpu-color: #9b59b6;
+            --ram-color: #1abc9c;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            --gradient: linear-gradient(135deg, #3498db, #2c3e50);
         }
 
         body {
@@ -131,6 +134,16 @@
             color: white;
         }
 
+        .btn-cpu {
+            background-color: var(--cpu-color);
+            color: white;
+        }
+
+        .btn-ram {
+            background-color: var(--ram-color);
+            color: white;
+        }
+
         .btn-outline {
             background-color: transparent;
             border: 1px solid var(--primary-color);
@@ -149,71 +162,209 @@
             box-shadow: none;
         }
 
-        /* Cards de métricas */
-        .metrics-grid {
+        /* Configuração de capacidade do disco */
+        .capacity-config {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .capacity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .capacity-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .capacity-current {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .capacity-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .capacity-input {
+            width: 200px;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .capacity-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .capacity-info {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Cards principais - GRID com 3 colunas */
+        .main-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
             margin-bottom: 30px;
         }
 
-        .metric-card {
+        @media (max-width: 1200px) {
+            .main-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .main-card {
             background-color: var(--card-bg);
             border-radius: 10px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: var(--shadow);
             transition: transform 0.3s;
         }
 
-        .metric-card:hover {
+        .main-card:hover {
             transform: translateY(-5px);
         }
 
-        .metric-header {
+        /* Card específicos */
+        .disk-card {
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .cpu-card {
+            border-left: 5px solid var(--cpu-color);
+        }
+
+        .ram-card {
+            border-left: 5px solid var(--ram-color);
+        }
+
+        .trend-card {
+            border-left: 5px solid var(--secondary-color);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
+        }
+
+        /* Valores principais */
+        .main-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .main-label {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            text-align: center;
             margin-bottom: 15px;
         }
 
-        .metric-title {
-            font-size: 1rem;
+        /* Detalhes dentro dos cards */
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
             color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        .metric-icon {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
             margin-bottom: 5px;
         }
 
-        .metric-trend {
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .detail-value {
+            font-size: 1.5rem;
+            font-weight: bold;
         }
 
-        .trend-up {
-            color: var(--danger-color);
+        /* Card de Tendência */
+        .trend-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
         }
 
-        .trend-down {
+        .trend-positive {
             color: var(--secondary-color);
         }
 
-        /* Área de gráficos */
+        .trend-negative {
+            color: var(--danger-color);
+        }
+
+        .trend-neutral {
+            color: var(--warning-color);
+        }
+
+        .trend-explanation {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        /* Gráficos */
         .charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
             margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         .chart-card {
@@ -238,56 +389,140 @@
             width: 100%;
         }
 
-        /* Gráfico de projeção selecionável */
-        .projection-chart-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .projection-chart-btn {
-            padding: 8px 15px;
-            border: 1px solid var(--border-color);
-            background-color: var(--card-bg);
-            color: var(--text-color);
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .projection-chart-btn:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .projection-chart-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        /* Painel de observações */
-        .observations-card {
+        /* Tabela de dados */
+        .data-table-container {
             background-color: var(--card-bg);
             border-radius: 10px;
             padding: 25px;
             box-shadow: var(--shadow);
             margin-bottom: 30px;
+            overflow-x: auto;
         }
 
-        .observations-title {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            color: var(--text-color);
+        .table-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: left;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .data-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .action-buttons {
+            display: flex;
             gap: 10px;
         }
 
-        .observations-content {
-            line-height: 1.6;
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* Alertas */
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-warning {
+            background-color: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .alert-cpu {
+            background-color: rgba(155, 89, 182, 0.1);
+            border-left: 4px solid var(--cpu-color);
+        }
+
+        .alert-ram {
+            background-color: rgba(26, 188, 156, 0.1);
+            border-left: 4px solid var(--ram-color);
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        /* Projeções */
+        .projection-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .projection-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .projection-title {
+            font-size: 1.1rem;
             color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .projection-date {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .projection-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
         }
 
         /* Modal de Login */
@@ -364,168 +599,6 @@
             border-color: var(--primary-color);
         }
 
-        /* Tabela de dados */
-        .data-table-container {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-            overflow-x: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th {
-            background-color: var(--primary-color);
-            color: white;
-            text-align: left;
-            padding: 15px;
-            font-weight: 600;
-        }
-
-        .data-table td {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
-        }
-
-        .data-table tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-        }
-
-        /* Configuração de capacidade do disco */
-        .capacity-config {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .capacity-info {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .capacity-label {
-            font-size: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .capacity-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .capacity-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .capacity-input {
-            width: 150px;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        .capacity-input:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        /* Alertas */
-        .alert {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .alert-warning {
-            background-color: rgba(243, 156, 18, 0.1);
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .alert-danger {
-            background-color: rgba(231, 76, 60, 0.1);
-            border-left: 4px solid var(--danger-color);
-        }
-
-        .alert-success {
-            background-color: rgba(46, 204, 113, 0.1);
-            border-left: 4px solid var(--secondary-color);
-        }
-
-        .alert-icon {
-            font-size: 1.5rem;
-        }
-
-        /* Projeções detalhadas */
-        .projection-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .projection-card {
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .projection-period {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-        }
-
-        .projection-date {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .projection-disk {
-            font-size: 1.2rem;
-            color: var(--primary-color);
-        }
-
         /* Footer */
         footer {
             text-align: center;
@@ -533,98 +606,6 @@
             color: var(--text-secondary);
             margin-top: 30px;
             border-top: 1px solid var(--border-color);
-        }
-
-        /* Notificação de backup */
-        .backup-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--secondary-color);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 1001;
-            transition: transform 0.3s;
-        }
-
-        /* Responsividade */
-        @media (max-width: 1200px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-            
-            .header-controls {
-                flex-direction: column;
-                width: 100%;
-                margin-top: 15px;
-            }
-            
-            .charts-container {
-                gap: 20px;
-            }
-            
-            .chart-card {
-                padding: 15px;
-            }
-            
-            .data-table-container {
-                padding: 15px;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .capacity-config {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .capacity-form {
-                width: 100%;
-            }
-            
-            .capacity-input {
-                flex: 1;
-            }
-            
-            .projection-chart-controls {
-                flex-direction: column;
-            }
-            
-            .projection-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-        }
-
-        @media (max-width: 480px) {
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .logo h1 {
-                font-size: 1.4rem;
-            }
-            
-            .btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-            
-            .projection-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
         /* Utilitários */
@@ -644,62 +625,50 @@
             margin-bottom: 20px;
         }
 
-        .mt-30 {
-            margin-top: 30px;
-        }
-
-        .mb-30 {
-            margin-bottom: 30px;
-        }
-        
-        .firebase-stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
-        .firebase-stats-section {
-            padding: 15px;
-            background: rgba(0,0,0,0.02);
-            border-radius: 8px;
-        }
-        
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .table-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .table-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .last-sync {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        
-        .critical { color: var(--danger-color); }
-        .warning { color: var(--warning-color); }
-        .attention { color: #f39c12; }
-        .normal { color: var(--secondary-color); }
-        
-        /* Adicionando espaçamento para input com 2 casas decimais */
         .two-decimals {
             font-family: 'Courier New', monospace;
+        }
+
+        /* Cores para status */
+        .status-critical { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-good { color: var(--secondary-color); }
+        .status-cpu { color: var(--cpu-color); }
+        .status-ram { color: var(--ram-color); }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .header-controls {
+                flex-direction: column;
+                width: 100%;
+                margin-top: 15px;
+            }
+            
+            .capacity-form {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .capacity-input {
+                width: 100%;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .projection-cards {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -709,7 +678,7 @@
         <header>
             <div class="logo">
                 <div class="logo-icon">📊</div>
-                <h1>e-SUS | Monitoramento de Disco de Anexos</h1>
+                <h1>Monitoramento do Servidor | Disco + CPU + RAM</h1>
             </div>
             <div class="header-controls">
                 <button id="themeToggle" class="btn btn-outline">
@@ -721,167 +690,230 @@
             </div>
         </header>
 
-        <!-- Configuração de capacidade do disco (VISÍVEL PARA TODOS) -->
-        <div id="capacityConfig" class="capacity-config">
-            <div class="capacity-info">
-                <div class="capacity-label">Capacidade Total do Disco D:</div>
-                <div class="capacity-value" id="currentCapacity">3000 GB</div>
-                <div id="capacityStatus" style="font-size:0.8rem; margin-top:5px;">
-                    <span id="capacityMessage">🔒 Apenas administradores podem alterar</span>
+        <!-- Sistema de Alertas -->
+        <div id="systemAlerts"></div>
+
+        <!-- Configuração de capacidade do disco -->
+        <div class="capacity-config">
+            <div class="capacity-header">
+                <div>
+                    <div class="capacity-title">Capacidade Atual do Disco D:</div>
+                    <div class="capacity-info" id="capacityInfo">
+                        <span id="capacityMessage">Referência para cálculos de espaço em disco</span>
+                    </div>
+                </div>
+                <div id="adminCapacityControls" class="hidden">
+                    <button id="updateCapacityBtn" class="btn btn-secondary">
+                        <span>💾</span> Salvar Nova Capacidade
+                    </button>
                 </div>
             </div>
+            
+            <div class="capacity-current" id="currentCapacityDisplay">
+                3000 GB
+            </div>
+            
             <div class="capacity-form">
-                <input type="number" id="capacityInput" class="capacity-input" placeholder="Faça login para alterar" min="1" max="10000" disabled>
-                <button id="updateCapacityBtn" class="btn btn-secondary" disabled>
-                    <span>🔒</span> Atualizar
-                </button>
+                <input type="number" id="capacityInput" class="capacity-input" 
+                       placeholder="Digite nova capacidade em GB" 
+                       min="1" max="1000000" step="1" disabled>
+                <div class="capacity-info">
+                    <span id="capacityHelpText">🔒 Apenas administradores podem alterar esta configuração</span>
+                </div>
             </div>
         </div>
 
-        <!-- Cards de métricas -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">CPU em uso</div>
-                    <div class="metric-icon">⚙️</div>
-                </div>
-                <div class="metric-value" id="cpuValue">0.00%</div>
-                <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Carregando...</span>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">Processos ativos</div>
-                    <div class="metric-icon">🔄</div>
-                </div>
-                <div class="metric-value" id="processesValue">0</div>
-                <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Carregando...</span>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">RAM Livre</div>
-                    <div class="metric-icon">💾</div>
-                </div>
-                <div class="metric-value" id="ramValue">0.0 GB</div>
-                <div class="metric-trend trend-up">
-                    <span>↗️</span> <span>Carregando...</span>
+        <!-- Cards principais - DISCO, CPU, RAM, TENDÊNCIA -->
+        <div class="main-cards">
+            <!-- Card do Disco -->
+            <div class="main-card disk-card">
+                <h2 class="card-title">💾 Disco D:</h2>
+                <div class="main-value" id="currentFreePercent">0.00%</div>
+                <div class="main-label" id="currentFreeLabel">Espaço Livre</div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Total do Disco</div>
+                        <div class="detail-value" id="totalCapacity">3000 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Livre</div>
+                        <div class="detail-value" id="currentFreeGB">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Usado</div>
+                        <div class="detail-value" id="currentUsedGB">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Última Atualização</div>
+                        <div class="detail-value" id="lastUpdateTime">--:--</div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">Swap Livre</div>
-                    <div class="metric-icon">📊</div>
-                </div>
-                <div class="metric-value" id="swapValue">0.0 GB</div>
-                <div class="metric-trend trend-up">
-                    <span>↗️</span> <span>Carregando...</span>
+
+            <!-- Card da CPU -->
+            <div class="main-card cpu-card">
+                <h2 class="card-title">⚙️ CPU</h2>
+                <div class="main-value" id="currentCpuPercent">0.00%</div>
+                <div class="main-label">Uso da CPU</div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value" id="cpuStatus">NORMAL</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tendência</div>
+                        <div class="detail-value" id="cpuTrend">0.00%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Média</div>
+                        <div class="detail-value" id="cpuAverage">0.00%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Máximo</div>
+                        <div class="detail-value" id="cpuMax">0.00%</div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">Disco D: Livre (%)</div>
-                    <div class="metric-icon">💿</div>
-                </div>
-                <div class="metric-value two-decimals" id="diskValue">0.00%</div>
-                <div class="metric-trend trend-down">
-                    <span>↘️</span> <span>Carregando...</span>
+
+            <!-- Card da RAM -->
+            <div class="main-card ram-card">
+                <h2 class="card-title">💽 Memória RAM</h2>
+                <div class="main-value" id="currentRamFree">0.0 GB</div>
+                <div class="main-label">RAM Livre</div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value" id="ramStatus">NORMAL</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tendência</div>
+                        <div class="detail-value" id="ramTrend">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Média</div>
+                        <div class="detail-value" id="ramAverage">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Mínimo</div>
+                        <div class="detail-value" id="ramMin">0.0 GB</div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-header">
-                    <div class="metric-title">Última leitura</div>
-                    <div class="metric-icon">⏰</div>
+
+            <!-- Card de Tendência (consumo de disco) -->
+            <div class="main-card trend-card">
+                <h2 class="card-title">📈 Tendência de Consumo</h2>
+                <div class="trend-value" id="trendValue">
+                    <span id="trendIcon">➡️</span>
+                    <span id="trendText">0.00 GB/dia</span>
                 </div>
-                <div class="metric-value" id="lastUpdate">--/--/---- --:--</div>
-                <div class="metric-trend">
-                    <span>🔄</span> <span>Carregando...</span>
+                <div class="trend-explanation" id="trendExplanation">
+                    Consumo médio diário do disco
+                </div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Dias Restantes</div>
+                        <div class="detail-value" id="daysRemaining">∞</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status do Disco</div>
+                        <div class="detail-value" id="diskStatusText">NORMAL</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Registros</div>
+                        <div class="detail-value" id="totalRecords">0</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Período</div>
+                        <div class="detail-value" id="periodDays">0 dias</div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Gráficos -->
         <div class="charts-container">
+            <!-- Gráfico do Disco -->
             <div class="chart-card">
-                <h2 class="chart-title">📈 Crescimento do Disco D: e Projeções</h2>
+                <h2 class="chart-title">📈 Histórico de Espaço Livre (Disco D:)</h2>
                 <div class="chart-container">
-                    <canvas id="lineChart"></canvas>
+                    <canvas id="diskChart"></canvas>
+                </div>
+                <div class="capacity-info mt-20">
+                    Baseado na capacidade atual: <strong id="chartCapacity">3000 GB</strong>
                 </div>
             </div>
-            
+
+            <!-- Gráfico da CPU -->
             <div class="chart-card">
-                <h2 class="chart-title">🍕 Uso do Disco D: (Usado vs Livre)</h2>
+                <h2 class="chart-title">⚙️ Histórico de Uso da CPU</h2>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+                <div class="capacity-info mt-20">
+                    Porcentagem de uso do processador
+                </div>
+            </div>
+
+            <!-- Gráfico da RAM -->
+            <div class="chart-card">
+                <h2 class="chart-title">💽 Histórico de RAM Livre</h2>
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                </div>
+                <div class="capacity-info mt-20">
+                    GB livres de memória RAM
+                </div>
+            </div>
+
+            <!-- Gráfico de Pizza (Uso atual) -->
+            <div class="chart-card">
+                <h2 class="chart-title">🍕 Uso Atual do Disco</h2>
                 <div class="chart-container">
                     <canvas id="pieChart"></canvas>
                 </div>
+                <div class="capacity-info mt-20">
+                    Distribuição atual do espaço em disco
+                </div>
             </div>
         </div>
 
-        <!-- Gráfico de projeção selecionável -->
-        <div class="chart-card">
-            <h2 class="chart-title">📊 Gráfico de Projeção do Espaço em Disco (%)</h2>
-            <div class="projection-chart-controls">
-                <button class="projection-chart-btn active" data-range="30">1 Mês</button>
-                <button class="projection-chart-btn" data-range="90">3 Meses</button>
-                <button class="projection-chart-btn" data-range="180">6 Meses</button>
-                <button class="projection-chart-btn" data-range="365">1 Ano</button>
-            </div>
-            <div class="chart-container">
-                <canvas id="projectionLineChart"></canvas>
-            </div>
+        <!-- Projeções do Disco -->
+        <h2 class="chart-title mb-20">📅 Projeções de Espaço em Disco</h2>
+        <div class="projection-cards" id="projectionCards">
+            <!-- Projeções serão inseridas via JavaScript -->
         </div>
 
-        <!-- Projeções detalhadas -->
-        <h2 class="chart-title mt-30">📅 Projeções de Espaço em Disco (Baseado em Dados Reais)</h2>
-        <div class="projection-grid" id="projectionGrid">
-            <!-- Projeções serão inseridas aqui via JavaScript -->
-        </div>
-
-        <!-- Observações técnicas -->
-        <div class="observations-card">
-            <h2 class="observations-title">📝 Observações Técnicas</h2>
-            <div class="observations-content">
-                <p><strong>Servidor:</strong> Servidor de Aplicação - Produção</p>
-                <p><strong>Função:</strong> Armazenamento de anexos (PDFs, documentos, imagens)</p>
-                <p><strong>Capacidade total do Disco D:</strong> <span id="obsCapacity">3000</span> GB</p>
-                <p><strong>Tendência de crescimento:</strong> <span id="obsGrowthRate">Calculando...</span></p>
-                <p><strong>Armazenamento:</strong> <span id="storageInfo">Firebase Cloud</span></p>
-            </div>
-        </div>
-
-        <!-- Área administrativa (inicialmente oculta) -->
+        <!-- Tabela de Dados (apenas para admin) -->
         <div id="adminPanel" class="hidden">
             <div class="data-table-container">
                 <div class="table-header">
-                    <h2 class="chart-title">📋 Histórico de Monitoramento (Firebase)</h2>
+                    <h2 class="card-title">📋 Histórico Completo de Registros</h2>
                     <div class="table-controls">
                         <button id="addRecordBtn" class="btn btn-secondary">
                             <span>➕</span> Novo Registro
                         </button>
                         <button id="exportBtn" class="btn btn-outline">
-                            <span>📤</span> Exportar Backup
+                            <span>📤</span> Exportar Dados
                         </button>
                         <button id="importBtn" class="btn btn-outline">
                             <span>📥</span> Importar JSON
                         </button>
                         <button id="loadSampleBtn" class="btn btn-warning">
-                            <span>🔄</span> Carregar Dados de Exemplo
+                            <span>🧪</span> Dados de Exemplo
                         </button>
                     </div>
                 </div>
                 
                 <input type="file" id="importFile" accept=".json" class="hidden">
                 
-                <div class="table-info">
-                    <span>Total de registros: <strong id="totalRecords">0</strong></span>
-                    <span class="last-sync">
+                <div class="table-info" style="display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Total de registros: <strong id="tableTotalRecords">0</strong></span>
+                    <span class="last-sync" style="color: var(--text-secondary); font-size: 0.9rem;">
                         Última atualização: <span id="lastSync">--:--</span>
                     </span>
                 </div>
@@ -889,14 +921,12 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Hora</th>
+                            <th>Data/Hora</th>
+                            <th>Disco Livre</th>
                             <th>CPU (%)</th>
-                            <th>Processos</th>
                             <th>RAM Livre (GB)</th>
-                            <th>Swap Livre (GB)</th>
-                            <th>Disco D: Livre (%)</th>
                             <th>Observações</th>
+                            <th>Capacidade na Época</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -905,26 +935,31 @@
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Estatísticas do Firebase -->
-            <div class="chart-card mt-30">
-                <h2 class="chart-title">📊 Estatísticas do Firebase</h2>
-                <div class="firebase-stats-grid">
-                    <div class="firebase-stats-section">
-                        <h3>Uso da Coleção</h3>
-                        <p>Documentos: <strong id="firebaseDocsCount">0</strong></p>
-                        <p>Primeiro registro: <span id="firebaseFirstDate">--/--/----</span></p>
-                        <p>Último registro: <span id="firebaseLastDate">--/--/----</span></p>
-                    </div>
-                    <div class="firebase-stats-section">
-                        <h3>Ações</h3>
-                        <button id="clearAllDataBtn" class="btn btn-danger">
-                            <span>🗑️</span> Limpar Todos os Dados
-                        </button>
-                        <button id="syncNowBtn" class="btn btn-primary">
-                            <span>🔄</span> Sincronizar Agora
-                        </button>
-                    </div>
+        </div>
+
+        <!-- Informações do Sistema -->
+        <div class="main-card">
+            <h2 class="card-title">ℹ️ Informações do Sistema</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">📋 Métricas Monitoradas</h3>
+                    <ul style="color: var(--text-secondary); line-height: 1.6;">
+                        <li><strong>Disco D:</strong> Espaço livre em % e GB</li>
+                        <li><strong>CPU:</strong> Porcentagem de uso do processador</li>
+                        <li><strong>RAM:</strong> GB livres de memória</li>
+                        <li><strong>Tendências:</strong> Consumo diário e projeções</li>
+                        <li><strong>Alertas:</strong> Automáticos baseados em limites</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">⚙️ Dados Técnicos</h3>
+                    <ul style="color: var(--text-secondary); line-height: 1.6;">
+                        <li><strong>Servidor:</strong> Servidor de Anexos - Produção</li>
+                        <li><strong>Disco D:</strong> <span id="infoCapacity">3000</span> GB</li>
+                        <li><strong>Total registros:</strong> <span id="infoRecords">0</span></li>
+                        <li><strong>Alertas CPU:</strong> >80% (Alerta), >90% (Crítico)</li>
+                        <li><strong>Alertas RAM:</strong> <10 GB (Alerta), <5 GB (Crítico)</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -960,7 +995,7 @@
         <div id="editModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title" id="editModalTitle">📝 Adicionar Registro</h2>
+                    <h2 class="modal-title" id="editModalTitle">📝 Novo Registro de Monitoramento</h2>
                     <div class="close-modal" id="closeEditModal">&times;</div>
                 </div>
                 <form id="dataForm">
@@ -972,34 +1007,60 @@
                         <label class="form-label" for="inputTime">Hora (HH:MM)</label>
                         <input type="text" id="inputTime" class="form-input" placeholder="HH:MM" required>
                     </div>
+                    
                     <div class="form-group">
-                        <label class="form-label" for="inputCpu">CPU em uso (%)</label>
-                        <input type="number" step="0.01" id="inputCpu" class="form-input" placeholder="Ex: 5.25" min="0" max="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="inputProcesses">Processos ativos</label>
-                        <input type="number" id="inputProcesses" class="form-input" placeholder="Ex: 133" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="inputRam">Memória RAM livre (GB)</label>
-                        <input type="number" step="0.1" id="inputRam" class="form-input" placeholder="Ex: 54.4" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="inputSwap">Swap livre (GB)</label>
-                        <input type="number" step="0.1" id="inputSwap" class="form-input" placeholder="Ex: 10.2" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="inputDisk">Espaço Livre em Disco D (%)</label>
+                        <label class="form-label" for="inputDisk">
+                            💾 Espaço Livre no Disco D:
+                            <span style="font-size:0.85rem; color:var(--text-secondary)">(% ou GB)</span>
+                        </label>
                         <input type="number" step="0.01" id="inputDisk" class="form-input two-decimals" 
-                               placeholder="Ex: 90.00" min="0" max="100" required>
+                               placeholder="Ex: 90.00 (para %) ou 2700.00 (para GB)" required>
+                        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                            Capacidade atual: <span id="modalCurrentCapacity">3000</span> GB
+                        </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="inputCpu">
+                            ⚙️ Uso da CPU (%)
+                        </label>
+                        <input type="number" step="0.01" id="inputCpu" class="form-input two-decimals" 
+                               placeholder="Ex: 25.50" min="0" max="100" required>
+                        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                            Porcentagem de uso do processador (0-100%)
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="inputRam">
+                            💽 Memória RAM Livre (GB)
+                        </label>
+                        <input type="number" step="0.1" id="inputRam" class="form-input" 
+                               placeholder="Ex: 59.8" min="0" required>
+                        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                            GB livres de memória RAM (ex: 59.8 GB)
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label class="form-label" for="inputObservations">Observações (opcional)</label>
-                        <textarea id="inputObservations" class="form-input" rows="3" placeholder="Digite observações sobre o servidor..."></textarea>
+                        <textarea id="inputObservations" class="form-input" rows="3" 
+                                  placeholder="Ex: 'Backup realizado', 'Pico de uso identificado', etc..."></textarea>
                     </div>
+                    
+                    <div class="form-group">
+                        <div class="alert alert-success">
+                            <div class="alert-icon">💡</div>
+                            <div>
+                                <strong>Informação:</strong> Este registro será salvo com a capacidade atual 
+                                (<span id="modalCapacity">3000</span> GB) como referência para o disco.
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-actions">
                         <button type="submit" id="saveBtn" class="btn btn-secondary">
-                            <span>💾</span> Salvar no Firebase
+                            <span>💾</span> Salvar Registro
                         </button>
                         <button type="button" id="cancelBtn" class="btn btn-outline">
                             <span>❌</span> Cancelar
@@ -1011,17 +1072,11 @@
 
         <!-- Footer -->
         <footer>
-            <p>GTI - Gerência de Tecnologia da Informação</p>
+            <p>Sistema de Monitoramento Completo do Servidor | Desenvolvido para GTI</p>
+            <p style="font-size:0.9rem; margin-top:5px;">
+                Monitorando: <strong>Disco D:</strong> | <strong>CPU</strong> | <strong>Memória RAM</strong>
+            </p>
         </footer>
-    </div>
-
-    <!-- Notificação de backup -->
-    <div id="backupNotification" class="backup-notification hidden">
-        <span>✅</span>
-        <div>
-            <strong>Backup realizado com sucesso!</strong>
-            <div>Arquivo salvo no seu computador</div>
-        </div>
     </div>
 
     <script>
@@ -1030,7 +1085,7 @@
         // ============================================
         const CONFIG = {
             ADMIN_USER: "admin",
-            ADMIN_PASSWORD: "ZXqwas123",
+            ADMIN_PASSWORD: "admin123",
             FIREBASE_CONFIG: {
                 apiKey: "AIzaSyDMZMnUgrSidkhhRSGseSfsVY71aKKaD6s",
                 authDomain: "esusmonitoramento-cb9d9.firebaseapp.com",
@@ -1041,11 +1096,24 @@
                 measurementId: "G-WECBVPST4T"
             },
             DEFAULT_DISK_CAPACITY: 3000,
-            COLLECTION_NAME: "monitoramento",
-            CONFIG_COLLECTION: "config",
+            COLLECTION_NAME: "monitoramento_completo",
+            CONFIG_COLLECTION: "config_completo",
             CONFIG_DISK_CAPACITY_DOC: "disk_capacity",
-            CRITICAL_FREE_SPACE: 5,
-            WARNING_FREE_SPACE: 20
+            
+            // Limiares de alerta - DISCO
+            DISK_CRITICAL_PERCENT: 5,
+            DISK_WARNING_PERCENT: 20,
+            
+            // Limiares de alerta - CPU
+            CPU_CRITICAL_PERCENT: 90,
+            CPU_WARNING_PERCENT: 80,
+            
+            // Limiares de alerta - RAM
+            RAM_CRITICAL_GB: 5,
+            RAM_WARNING_GB: 10,
+            
+            // Projeções
+            PROJECTION_DAYS: [30, 60, 90, 180, 365]
         };
 
         // ============================================
@@ -1058,8 +1126,13 @@
             editingId: null,
             data: [],
             diskCapacity: CONFIG.DEFAULT_DISK_CAPACITY,
-            projectionChartRange: 30,
-            unsubscribe: null
+            unsubscribe: null,
+            charts: {
+                disk: null,
+                cpu: null,
+                ram: null,
+                pie: null
+            }
         };
 
         // ============================================
@@ -1072,29 +1145,76 @@
         // ELEMENTOS DOM
         // ============================================
         const elements = {
+            // Controles
             themeToggle: document.getElementById('themeToggle'),
             themeIcon: document.getElementById('themeIcon'),
             adminLoginBtn: document.getElementById('adminLoginBtn'),
+            loginModal: document.getElementById('loginModal'),
+            closeLoginModal: document.getElementById('closeLoginModal'),
+            loginBtn: document.getElementById('loginBtn'),
+            loginError: document.getElementById('loginError'),
+            username: document.getElementById('username'),
+            password: document.getElementById('password'),
+            
+            // Configuração de capacidade
+            capacityInput: document.getElementById('capacityInput'),
+            updateCapacityBtn: document.getElementById('updateCapacityBtn'),
+            capacityMessage: document.getElementById('capacityMessage'),
+            capacityHelpText: document.getElementById('capacityHelpText'),
+            adminCapacityControls: document.getElementById('adminCapacityControls'),
+            currentCapacityDisplay: document.getElementById('currentCapacityDisplay'),
+            capacityInfo: document.getElementById('capacityInfo'),
+            
+            // Cards principais - DISCO
+            currentFreePercent: document.getElementById('currentFreePercent'),
+            currentFreeLabel: document.getElementById('currentFreeLabel'),
+            totalCapacity: document.getElementById('totalCapacity'),
+            currentFreeGB: document.getElementById('currentFreeGB'),
+            currentUsedGB: document.getElementById('currentUsedGB'),
+            lastUpdateTime: document.getElementById('lastUpdateTime'),
+            
+            // Cards principais - CPU
+            currentCpuPercent: document.getElementById('currentCpuPercent'),
+            cpuStatus: document.getElementById('cpuStatus'),
+            cpuTrend: document.getElementById('cpuTrend'),
+            cpuAverage: document.getElementById('cpuAverage'),
+            cpuMax: document.getElementById('cpuMax'),
+            
+            // Cards principais - RAM
+            currentRamFree: document.getElementById('currentRamFree'),
+            ramStatus: document.getElementById('ramStatus'),
+            ramTrend: document.getElementById('ramTrend'),
+            ramAverage: document.getElementById('ramAverage'),
+            ramMin: document.getElementById('ramMin'),
+            
+            // Card de tendência
+            trendValue: document.getElementById('trendValue'),
+            trendIcon: document.getElementById('trendIcon'),
+            trendText: document.getElementById('trendText'),
+            trendExplanation: document.getElementById('trendExplanation'),
+            daysRemaining: document.getElementById('daysRemaining'),
+            diskStatusText: document.getElementById('diskStatusText'),
+            totalRecords: document.getElementById('totalRecords'),
+            periodDays: document.getElementById('periodDays'),
+            
+            // Gráficos
+            chartCapacity: document.getElementById('chartCapacity'),
+            
+            // Projeções
+            projectionCards: document.getElementById('projectionCards'),
+            
+            // Painel administrativo
+            adminPanel: document.getElementById('adminPanel'),
             addRecordBtn: document.getElementById('addRecordBtn'),
             exportBtn: document.getElementById('exportBtn'),
             importBtn: document.getElementById('importBtn'),
             importFile: document.getElementById('importFile'),
             loadSampleBtn: document.getElementById('loadSampleBtn'),
-            clearAllDataBtn: document.getElementById('clearAllDataBtn'),
-            syncNowBtn: document.getElementById('syncNowBtn'),
-            capacityConfig: document.getElementById('capacityConfig'),
-            currentCapacity: document.getElementById('currentCapacity'),
-            capacityInput: document.getElementById('capacityInput'),
-            updateCapacityBtn: document.getElementById('updateCapacityBtn'),
-            capacityMessage: document.getElementById('capacityMessage'),
-            obsCapacity: document.getElementById('obsCapacity'),
-            obsGrowthRate: document.getElementById('obsGrowthRate'),
-            storageInfo: document.getElementById('storageInfo'),
-            projectionChartBtns: document.querySelectorAll('.projection-chart-btn'),
-            loginModal: document.getElementById('loginModal'),
-            closeLoginModal: document.getElementById('closeLoginModal'),
-            loginBtn: document.getElementById('loginBtn'),
-            loginError: document.getElementById('loginError'),
+            dataTableBody: document.getElementById('dataTableBody'),
+            tableTotalRecords: document.getElementById('tableTotalRecords'),
+            lastSync: document.getElementById('lastSync'),
+            
+            // Modal de edição
             editModal: document.getElementById('editModal'),
             closeEditModal: document.getElementById('closeEditModal'),
             editModalTitle: document.getElementById('editModalTitle'),
@@ -1103,37 +1223,20 @@
             cancelBtn: document.getElementById('cancelBtn'),
             inputDate: document.getElementById('inputDate'),
             inputTime: document.getElementById('inputTime'),
-            inputCpu: document.getElementById('inputCpu'),
-            inputProcesses: document.getElementById('inputProcesses'),
-            inputRam: document.getElementById('inputRam'),
-            inputSwap: document.getElementById('inputSwap'),
             inputDisk: document.getElementById('inputDisk'),
+            inputCpu: document.getElementById('inputCpu'),
+            inputRam: document.getElementById('inputRam'),
             inputObservations: document.getElementById('inputObservations'),
-            adminPanel: document.getElementById('adminPanel'),
-            projectionGrid: document.getElementById('projectionGrid'),
-            cpuValue: document.getElementById('cpuValue'),
-            processesValue: document.getElementById('processesValue'),
-            ramValue: document.getElementById('ramValue'),
-            swapValue: document.getElementById('swapValue'),
-            diskValue: document.getElementById('diskValue'),
-            lastUpdate: document.getElementById('lastUpdate'),
-            dataTableBody: document.getElementById('dataTableBody'),
-            totalRecords: document.getElementById('totalRecords'),
-            lastSync: document.getElementById('lastSync'),
-            firebaseDocsCount: document.getElementById('firebaseDocsCount'),
-            firebaseFirstDate: document.getElementById('firebaseFirstDate'),
-            firebaseLastDate: document.getElementById('firebaseLastDate'),
-            username: document.getElementById('username'),
-            password: document.getElementById('password'),
-            backupNotification: document.getElementById('backupNotification')
+            modalCurrentCapacity: document.getElementById('modalCurrentCapacity'),
+            modalCapacity: document.getElementById('modalCapacity'),
+            
+            // Informações
+            infoCapacity: document.getElementById('infoCapacity'),
+            infoRecords: document.getElementById('infoRecords'),
+            
+            // Alertas
+            systemAlerts: document.getElementById('systemAlerts')
         };
-
-        // ============================================
-        // GRÁFICOS
-        // ============================================
-        let lineChart = null;
-        let pieChart = null;
-        let projectionLineChart = null;
 
         // ============================================
         // FUNÇÕES UTILITÁRIAS
@@ -1152,15 +1255,6 @@
                 const hours = d.getHours().toString().padStart(2, '0');
                 const minutes = d.getMinutes().toString().padStart(2, '0');
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
-            },
-            
-            formatDateMonthYear: (date) => {
-                const d = new Date(date);
-                const months = [
-                    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-                    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-                ];
-                return `${months[d.getMonth()]}/${d.getFullYear()}`;
             },
             
             formatTime: (date) => {
@@ -1194,61 +1288,120 @@
                        parseInt(minutes) >= 0 && parseInt(minutes) < 60;
             },
             
-            calculateDiskUsage: (freePercent) => {
-                const freeGB = (freePercent / 100) * state.diskCapacity;
-                const usedGB = state.diskCapacity - freeGB;
-                const usedPercent = 100 - freePercent;
+            // Converter valor de entrada (pode ser % ou GB) para porcentagem
+            normalizeDiskValue: (value, currentCapacity) => {
+                // Se o valor for maior que 100, assumir que está em GB
+                if (value > 100) {
+                    return (value / currentCapacity) * 100;
+                }
+                return value;
+            },
+            
+            // Calcular uso atual baseado na capacidade configurada
+            calculateCurrentUsage: (freePercent, currentCapacity) => {
+                const freeGB = (freePercent / 100) * currentCapacity;
+                const usedGB = currentCapacity - freeGB;
                 
                 return {
-                    usedGB,
-                    freeGB,
-                    usedPercent: parseFloat(usedPercent.toFixed(2)),
-                    freePercent: parseFloat(freePercent.toFixed(2))
+                    freePercent: parseFloat(freePercent.toFixed(2)),
+                    freeGB: parseFloat(freeGB.toFixed(2)),
+                    usedGB: parseFloat(usedGB.toFixed(2)),
+                    capacity: currentCapacity
                 };
-            },
-            
-            gbToPercent: (gb) => {
-                return (gb / state.diskCapacity) * 100;
-            },
-            
-            percentToGB: (percent) => {
-                return (percent / 100) * state.diskCapacity;
             },
             
             generateId: () => {
                 return Date.now().toString(36) + Math.random().toString(36).substr(2);
             },
             
-            formatMonthYearFromDays: (daysFromNow) => {
-                const date = new Date();
-                date.setDate(date.getDate() + daysFromNow);
-                return utils.formatDateMonthYear(date);
+            showAlert: (type, title, message) => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                
+                let icon = 'ℹ️';
+                if (type === 'danger') icon = '❌';
+                if (type === 'warning') icon = '⚠️';
+                if (type === 'success') icon = '✅';
+                if (type === 'cpu') icon = '⚙️';
+                if (type === 'ram') icon = '💽';
+                
+                alertDiv.innerHTML = `
+                    <div class="alert-icon">${icon}</div>
+                    <div>
+                        <strong>${title}</strong><br>
+                        ${message}
+                    </div>
+                `;
+                
+                elements.systemAlerts.prepend(alertDiv);
+                
+                // Remover após 10 segundos
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 10000);
             },
             
-            getMonthName: (month) => {
-                const months = [
-                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-                ];
-                return months[month];
+            // Calcular estatísticas para CPU
+            calculateCpuStats: (data) => {
+                if (data.length === 0) return null;
+                
+                const cpuValues = data.map(record => record.cpu);
+                const sum = cpuValues.reduce((a, b) => a + b, 0);
+                const avg = sum / cpuValues.length;
+                const max = Math.max(...cpuValues);
+                const min = Math.min(...cpuValues);
+                
+                // Calcular tendência (últimos 5 registros)
+                let trend = 0;
+                if (data.length >= 5) {
+                    const recent = data.slice(0, 5).map(r => r.cpu);
+                    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                    const older = data.slice(5, 10).map(r => r.cpu);
+                    const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : recentAvg;
+                    trend = recentAvg - olderAvg;
+                }
+                
+                return {
+                    average: parseFloat(avg.toFixed(2)),
+                    max: parseFloat(max.toFixed(2)),
+                    min: parseFloat(min.toFixed(2)),
+                    trend: parseFloat(trend.toFixed(2)),
+                    current: data[0]?.cpu || 0
+                };
             },
             
-            showNotification: (message, type = 'success') => {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-            },
-            
-            formatTwoDecimals: (number) => {
-                return parseFloat(number).toFixed(2);
-            },
-            
-            validateTwoDecimals: (numberStr) => {
-                const regex = /^\d+(\.\d{1,2})?$/;
-                return regex.test(numberStr);
+            // Calcular estatísticas para RAM
+            calculateRamStats: (data) => {
+                if (data.length === 0) return null;
+                
+                const ramValues = data.map(record => record.ramLivre);
+                const sum = ramValues.reduce((a, b) => a + b, 0);
+                const avg = sum / ramValues.length;
+                const max = Math.max(...ramValues);
+                const min = Math.min(...ramValues);
+                
+                // Calcular tendência (últimos 5 registros)
+                let trend = 0;
+                if (data.length >= 5) {
+                    const recent = data.slice(0, 5).map(r => r.ramLivre);
+                    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                    const older = data.slice(5, 10).map(r => r.ramLivre);
+                    const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : recentAvg;
+                    trend = recentAvg - olderAvg; // positivo = mais RAM livre
+                }
+                
+                return {
+                    average: parseFloat(avg.toFixed(1)),
+                    max: parseFloat(max.toFixed(1)),
+                    min: parseFloat(min.toFixed(1)),
+                    trend: parseFloat(trend.toFixed(1)),
+                    current: data[0]?.ramLivre || 0
+                };
             }
         };
 
         // ============================================
-        // FUNÇÕES DO FIREBASE - ATUALIZADAS
+        // FUNÇÕES DO FIREBASE
         // ============================================
         async function initializeFirebase() {
             try {
@@ -1257,9 +1410,9 @@
                     firestore = firebase.firestore();
                     state.firebaseInitialized = true;
                     
-                    console.log("✅ Firebase inicializado com sucesso");
+                    console.log("✅ Firebase inicializado");
                     
-                    // Carregar capacidade do disco do Firebase
+                    // Carregar capacidade do Firebase
                     await loadDiskCapacityFromFirebase();
                     
                     return true;
@@ -1278,9 +1431,9 @@
                 if (doc.exists) {
                     const data = doc.data();
                     state.diskCapacity = data.capacity;
-                    console.log(`📊 Capacidade carregada do Firebase: ${state.diskCapacity} GB`);
+                    console.log(`📊 Capacidade carregada: ${state.diskCapacity} GB`);
                 } else {
-                    // Se não existir, usar padrão e criar no Firebase
+                    // Criar configuração padrão
                     state.diskCapacity = CONFIG.DEFAULT_DISK_CAPACITY;
                     await saveDiskCapacityToFirebase();
                     console.log(`📊 Capacidade padrão criada: ${state.diskCapacity} GB`);
@@ -1289,7 +1442,7 @@
                 updateCapacityDisplay();
                 
             } catch (error) {
-                console.error("❌ Erro ao carregar capacidade do disco:", error);
+                console.error("❌ Erro ao carregar capacidade:", error);
                 state.diskCapacity = CONFIG.DEFAULT_DISK_CAPACITY;
                 updateCapacityDisplay();
             }
@@ -1300,13 +1453,13 @@
                 await firestore.collection(CONFIG.CONFIG_COLLECTION).doc(CONFIG.CONFIG_DISK_CAPACITY_DOC).set({
                     capacity: state.diskCapacity,
                     updatedAt: new Date().toISOString(),
-                    updatedBy: state.isAdmin ? CONFIG.ADMIN_USER : 'system'
+                    updatedBy: state.isAdmin ? CONFIG.ADMIN_USER : 'sistema'
                 }, { merge: true });
                 
-                console.log(`✅ Capacidade salva no Firebase: ${state.diskCapacity} GB`);
+                console.log(`✅ Capacidade salva: ${state.diskCapacity} GB`);
                 return true;
             } catch (error) {
-                console.error("❌ Erro ao salvar capacidade no Firebase:", error);
+                console.error("❌ Erro ao salvar capacidade:", error);
                 return false;
             }
         }
@@ -1330,49 +1483,25 @@
                         snapshot.forEach(doc => {
                             const data = doc.data();
                             data.id = doc.id;
-                            
-                            if (data.discoLivre > 100) {
-                                data.discoLivre = utils.gbToPercent(data.discoLivre);
-                            }
-                            
                             state.data.push(data);
                         });
                         
-                        console.log(`📥 Dados recebidos do Firebase: ${state.data.length} registros`);
+                        console.log(`📥 Dados recebidos: ${state.data.length} registros`);
                         
-                        updateFirebaseStats();
                         updateUI();
                         
+                        // Atualizar hora da última sincronização
                         const now = new Date();
                         elements.lastSync.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                        
                     }, (error) => {
                         console.error("❌ Erro no listener do Firebase:", error);
                     });
                 
-                console.log("👂 Listener do Firebase configurado com sucesso");
+                console.log("👂 Listener configurado");
                 
             } catch (error) {
-                console.error("❌ Erro ao configurar listener do Firebase:", error);
-            }
-        }
-
-        function updateFirebaseStats() {
-            elements.firebaseDocsCount.textContent = state.data.length;
-            elements.totalRecords.textContent = state.data.length;
-            
-            if (state.data.length > 0) {
-                const sortedByDate = [...state.data].sort((a, b) => 
-                    new Date(a.timestamp) - new Date(b.timestamp)
-                );
-                
-                const firstRecord = sortedByDate[0];
-                const lastRecord = sortedByDate[sortedByDate.length - 1];
-                
-                elements.firebaseFirstDate.textContent = utils.formatDate(firstRecord.timestamp);
-                elements.firebaseLastDate.textContent = utils.formatDate(lastRecord.timestamp);
-            } else {
-                elements.firebaseFirstDate.textContent = "--/--/----";
-                elements.firebaseLastDate.textContent = "--/--/----";
+                console.error("❌ Erro ao configurar listener:", error);
             }
         }
 
@@ -1380,64 +1509,58 @@
             if (!state.firebaseInitialized) {
                 const initialized = await initializeFirebase();
                 if (!initialized) {
-                    alert("Erro: Não foi possível conectar ao Firebase");
+                    utils.showAlert('danger', 'Erro', 'Não foi possível conectar ao Firebase');
                     return;
                 }
             }
             
             try {
-                // Garantir que discoLivre tenha 2 casas decimais
-                record.discoLivre = parseFloat(record.discoLivre.toFixed(2));
+                // Normalizar o valor do disco (% ou GB)
+                const freePercent = utils.normalizeDiskValue(record.discoLivre, state.diskCapacity);
+                
+                const firebaseRecord = {
+                    timestamp: record.timestamp,
+                    discoLivre: parseFloat(freePercent.toFixed(2)),
+                    cpu: parseFloat(record.cpu.toFixed(2)),
+                    ramLivre: parseFloat(record.ramLivre.toFixed(1)),
+                    capacidadeRegistro: state.diskCapacity, // Salvar capacidade da época
+                    discoLivreGB: (freePercent / 100) * state.diskCapacity,
+                    observacoes: record.observacoes || "",
+                    coletadoPor: state.isAdmin ? CONFIG.ADMIN_USER : 'sistema'
+                };
                 
                 if (state.editingId) {
-                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(state.editingId).update({
-                        timestamp: record.timestamp,
-                        cpu: record.cpu,
-                        processos: record.processos,
-                        ramLivre: record.ramLivre,
-                        swapLivre: record.swapLivre,
-                        discoLivre: record.discoLivre,
-                        observacoes: record.observacoes || ""
-                    });
-                    console.log("✅ Registro atualizado no Firebase:", state.editingId);
+                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(state.editingId).update(firebaseRecord);
+                    console.log("✅ Registro atualizado:", state.editingId);
                     state.editingId = null;
                 } else {
                     const id = utils.generateId();
-                    record.id = id;
-                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
-                        timestamp: record.timestamp,
-                        cpu: record.cpu,
-                        processos: record.processos,
-                        ramLivre: record.ramLivre,
-                        swapLivre: record.swapLivre,
-                        discoLivre: record.discoLivre,
-                        observacoes: record.observacoes || ""
-                    });
-                    console.log("✅ Registro salvo no Firebase:", id);
+                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set(firebaseRecord);
+                    console.log("✅ Registro salvo:", id);
                 }
                 
-                utils.showNotification("Registro salvo com sucesso no Firebase!");
+                utils.showAlert('success', 'Sucesso', 'Registro salvo no Firebase');
                 
             } catch (error) {
-                console.error("❌ Erro ao salvar dados no Firebase:", error);
-                alert("Erro ao salvar no Firebase: " + error.message);
+                console.error("❌ Erro ao salvar dados:", error);
+                utils.showAlert('danger', 'Erro', 'Falha ao salvar: ' + error.message);
             }
         }
 
         async function updateDiskCapacity() {
-            // Verificar se o usuário é admin
-            if (!state.isAdmin) {
-                alert("❌ Apenas administradores podem alterar a capacidade do disco.");
-                return;
-            }
-            
             const newCapacity = parseInt(elements.capacityInput.value);
             
-            if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 10000) {
-                alert("Por favor, insira uma capacidade válida entre 1 e 10000 GB.");
+            if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 1000000) {
+                utils.showAlert('warning', 'Atenção', 'Digite uma capacidade válida entre 1 e 1.000.000 GB');
                 return;
             }
             
+            if (newCapacity === state.diskCapacity) {
+                utils.showAlert('info', 'Informação', 'A capacidade já está configurada para este valor');
+                return;
+            }
+            
+            const oldCapacity = state.diskCapacity;
             state.diskCapacity = newCapacity;
             
             // Salvar no Firebase
@@ -1448,418 +1571,924 @@
                 updateUI();
                 elements.capacityInput.value = "";
                 
-                alert(`✅ Capacidade do disco D: atualizada para ${newCapacity} GB.`);
+                utils.showAlert('success', 'Sucesso', 
+                    `Capacidade alterada de ${oldCapacity} GB para ${newCapacity} GB. ` +
+                    `Todos os cálculos serão atualizados.`);
             } else {
-                alert("❌ Erro ao salvar a capacidade no Firebase.");
-            }
-        }
-
-        function updateCapacityDisplay() {
-            elements.currentCapacity.textContent = `${state.diskCapacity} GB`;
-            elements.obsCapacity.textContent = state.diskCapacity;
-        }
-
-        // ============================================
-        // CONTROLE DE ACESSO À CAPACIDADE DO DISCO
-        // ============================================
-        function updateCapacityFormAccess() {
-            if (state.isAdmin) {
-                // Habilitar entrada e botão
-                elements.capacityInput.disabled = false;
-                elements.capacityInput.placeholder = "Nova capacidade (GB)";
-                elements.updateCapacityBtn.disabled = false;
-                elements.updateCapacityBtn.innerHTML = '<span>🔄</span> Atualizar';
-                
-                // Atualizar mensagem
-                elements.capacityMessage.innerHTML = '✅ Modo administrativo ativo - Você pode alterar a capacidade';
-                elements.capacityMessage.style.color = '#2ecc71';
-            } else {
-                // Desabilitar entrada e botão
-                elements.capacityInput.disabled = true;
-                elements.capacityInput.placeholder = "Faça login para alterar";
-                elements.updateCapacityBtn.disabled = true;
-                elements.updateCapacityBtn.innerHTML = '<span>🔒</span> Atualizar';
-                
-                // Atualizar mensagem
-                elements.capacityMessage.innerHTML = '🔒 Apenas administradores podem alterar esta configuração';
-                elements.capacityMessage.style.color = '';
+                utils.showAlert('danger', 'Erro', 'Falha ao salvar a capacidade no Firebase');
+                state.diskCapacity = oldCapacity;
+                updateCapacityDisplay();
             }
         }
 
         // ============================================
-        // FUNÇÃO DE PROJEÇÃO BASEADA EM DADOS REAIS
+        // FUNÇÕES DE CÁLCULO DE CONSUMO E PROJEÇÕES
         // ============================================
-        function calculateDetailedProjections() {
+
+        /**
+         * Calcula o consumo diário médio do disco com base nos dados históricos
+         */
+        function calculateDailyDiskConsumption() {
+            console.log('📊 Calculando consumo diário...');
+            
+            // Verificar se há dados suficientes
             if (state.data.length < 2) {
-                elements.projectionGrid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                        <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
-                        <h3>Dados insuficientes para projeção</h3>
-                        <p>Adicione mais registros para ver as projeções.</p>
-                    </div>
-                `;
-                return;
+                console.log('⚠️ Dados insuficientes para cálculo');
+                return { 
+                    dailyConsumptionGB: 0, 
+                    totalDays: 0, 
+                    validPairs: 0, 
+                    confidence: 'insufficient_data' 
+                };
             }
             
-            // 1. Dados ordenados por data
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            // Ordenar dados do mais antigo para o mais recente
+            const sortedData = [...state.data].sort((a, b) => {
+                return new Date(a.timestamp) - new Date(b.timestamp);
+            });
             
-            // 2. Calcular consumo diário REAL dos dados históricos
             let totalConsumptionGB = 0;
             let totalDays = 0;
-            let consumptionSamples = [];
+            let validPairs = 0;
             
+            // Analisar cada par consecutivo de registros
             for (let i = 0; i < sortedData.length - 1; i++) {
-                const prev = sortedData[i];
-                const curr = sortedData[i + 1];
+                const record1 = sortedData[i];
+                const record2 = sortedData[i + 1];
                 
-                // Calcular diferença em dias
-                const prevDate = new Date(prev.timestamp);
-                const currDate = new Date(curr.timestamp);
-                const timeDiffMs = currDate - prevDate;
-                const daysBetween = timeDiffMs / (1000 * 60 * 60 * 24);
+                // Obter a capacidade correta para cada registro
+                const capacity1 = record1.capacidadeRegistro || state.diskCapacity;
+                const capacity2 = record2.capacidadeRegistro || state.diskCapacity;
                 
-                // Só considerar intervalos válidos (1-30 dias) e onde houve consumo
-                if (daysBetween >= 1 && daysBetween <= 30 && curr.discoLivre < prev.discoLivre) {
-                    // Calcular consumo em GB
-                    const prevFreeGB = (prev.discoLivre / 100) * state.diskCapacity;
-                    const currFreeGB = (curr.discoLivre / 100) * state.diskCapacity;
-                    const consumptionGB = prevFreeGB - currFreeGB;
-                    
-                    // Consumo diário neste intervalo
-                    const dailyConsumption = consumptionGB / daysBetween;
-                    
+                // Calcular espaço livre em GB para cada registro
+                const freeGB1 = (record1.discoLivre / 100) * capacity1;
+                const freeGB2 = (record2.discoLivre / 100) * capacity2;
+                
+                // Calcular consumo entre os dois registros (GB perdidos)
+                const consumptionGB = freeGB1 - freeGB2;
+                
+                // Calcular dias entre os registros
+                const timeDiff = new Date(record2.timestamp) - new Date(record1.timestamp);
+                const daysBetween = timeDiff / (1000 * 60 * 60 * 24);
+                
+                // Só considerar se houve consumo positivo E intervalo de pelo menos 0.1 dias
+                if (consumptionGB > 0 && daysBetween > 0.1) {
                     totalConsumptionGB += consumptionGB;
                     totalDays += daysBetween;
-                    consumptionSamples.push({
-                        days: daysBetween,
-                        consumptionGB: consumptionGB,
-                        dailyConsumption: dailyConsumption,
-                        fromDate: utils.formatDate(prev.timestamp),
-                        toDate: utils.formatDate(curr.timestamp)
-                    });
+                    validPairs++;
                 }
             }
             
-            if (consumptionSamples.length === 0) {
-                elements.projectionGrid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                        <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
-                        <h3>Não foi possível calcular projeção</h3>
-                        <p>Os dados não mostram consumo consistente.</p>
+            // Calcular consumo diário médio
+            let dailyConsumptionGB = 0;
+            let confidence = 'low';
+            
+            if (validPairs > 0 && totalDays > 0) {
+                dailyConsumptionGB = totalConsumptionGB / totalDays;
+                
+                // Determinar confiança baseada na quantidade de dados
+                if (validPairs >= 5 && totalDays >= 30) {
+                    confidence = 'high';
+                } else if (validPairs >= 3 && totalDays >= 7) {
+                    confidence = 'medium';
+                }
+                
+                console.log(`✅ Cálculo: ${dailyConsumptionGB.toFixed(2)} GB/dia, ${validPairs} pares válidos, ${totalDays.toFixed(1)} dias`);
+            }
+            
+            return { 
+                dailyConsumptionGB, 
+                totalDays, 
+                validPairs, 
+                confidence 
+            };
+        }
+
+        /**
+         * Atualiza o card de tendência com o consumo calculado
+         */
+        function calculateAndUpdateDiskTrend() {
+            console.log('📈 Atualizando tendência do disco...');
+            
+            // Verificar se há dados
+            if (state.data.length === 0) {
+                elements.trendIcon.textContent = "📊";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Adicione registros para calcular tendência";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "SEM DADOS";
+                elements.periodDays.textContent = "0 dias";
+                return;
+            }
+            
+            // Obter o registro mais recente
+            const latestRecord = state.data[0];
+            const latestUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            if (state.data.length < 2) {
+                elements.trendIcon.textContent = "📊";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Adicione mais registros para calcular tendência";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "NORMAL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+                elements.periodDays.textContent = "0 dias";
+                return;
+            }
+            
+            // Calcular consumo diário
+            const { dailyConsumptionGB, totalDays, validPairs, confidence } = calculateDailyDiskConsumption();
+            
+            // Atualizar elementos da tendência
+            if (dailyConsumptionGB > 0.01) { // Consumo significativo
+                elements.trendIcon.textContent = "📈";
+                elements.trendText.textContent = `${dailyConsumptionGB.toFixed(2)} GB/dia`;
+                elements.trendExplanation.textContent = `Baseado em ${validPairs} períodos (${totalDays.toFixed(1)} dias)`;
+                
+                // Calcular dias restantes até o disco ficar cheio
+                const daysRemaining = Math.floor(latestUsage.freeGB / dailyConsumptionGB);
+                elements.daysRemaining.textContent = daysRemaining > 1000 ? "∞" : daysRemaining;
+                
+                // Atualizar status baseado nos dias restantes
+                if (daysRemaining < 30) {
+                    elements.diskStatusText.textContent = "CRÍTICO";
+                    elements.diskStatusText.classList.add('status-critical');
+                    elements.diskStatusText.classList.remove('status-warning', 'status-good');
+                } else if (daysRemaining < 90) {
+                    elements.diskStatusText.textContent = "ALERTA";
+                    elements.diskStatusText.classList.add('status-warning');
+                    elements.diskStatusText.classList.remove('status-critical', 'status-good');
+                } else {
+                    elements.diskStatusText.textContent = "NORMAL";
+                    elements.diskStatusText.classList.add('status-good');
+                    elements.diskStatusText.classList.remove('status-critical', 'status-warning');
+                }
+                
+                // Adicionar ícone de confiança
+                let confidenceIcon = "";
+                if (confidence === 'high') confidenceIcon = "✅";
+                else if (confidence === 'medium') confidenceIcon = "⚠️";
+                else confidenceIcon = "❓";
+                
+                elements.trendExplanation.textContent += ` ${confidenceIcon}`;
+                
+            } else if (dailyConsumptionGB < -0.01) { // Ganho de espaço
+                elements.trendIcon.textContent = "📉";
+                elements.trendText.textContent = `${Math.abs(dailyConsumptionGB).toFixed(2)} GB/dia (ganho)`;
+                elements.trendExplanation.textContent = "Espaço livre está aumentando";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "ESTÁVEL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+            } else { // Consumo insignificante ou nulo
+                elements.trendIcon.textContent = "➡️";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Consumo estável ou insignificante";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "ESTÁVEL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+            }
+            
+            // Calcular período total de análise
+            if (state.data.length > 1) {
+                const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                const firstDate = new Date(sortedData[0].timestamp);
+                const lastDate = new Date(sortedData[sortedData.length - 1].timestamp);
+                const daysBetween = Math.floor((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+                elements.periodDays.textContent = `${daysBetween} dias`;
+            }
+        }
+
+        /**
+         * Atualiza as projeções de espaço em disco
+         */
+        function updateProjections() {
+            console.log('🔮 Atualizando projeções...');
+            
+            // Limpar container
+            elements.projectionCards.innerHTML = '';
+            
+            // Verificar se há dados suficientes
+            if (state.data.length < 2) {
+                elements.projectionCards.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                        <h3 style="margin-bottom: 10px;">Adicione mais registros para ver as projeções</h3>
+                        <p>Precisamos de pelo menos 2 registros com consumo para calcular projeções.</p>
+                        <p style="margin-top: 15px; font-size: 0.9rem;">
+                            <strong>Dica:</strong> Use o botão "Dados de Exemplo" para testar o sistema.
+                        </p>
                     </div>
                 `;
                 return;
             }
             
-            // 3. Calcular consumo diário médio REAL
-            const avgDailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
+            // Obter o registro mais recente
+            const latestRecord = state.data[0];
+            const latestUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
             
-            // 4. Definir 3 cenários baseados na variação histórica
-            const scenarios = [
-                { 
-                    name: 'Pessimista', 
-                    factor: 1.05,
-                    color: '#e74c3c',
-                    description: 'Consumo 5% acima da média',
-                    dailyConsumption: avgDailyConsumptionGB * 1.05
-                },
-                { 
-                    name: 'Realista', 
-                    factor: 1.00, 
-                    color: '#3498db',
-                    description: 'Média histórica',
-                    dailyConsumption: avgDailyConsumptionGB
-                },
-                { 
-                    name: 'Otimista', 
-                    factor: 0.95,
-                    color: '#2ecc71',
-                    description: 'Consumo 5% abaixo da média',
-                    dailyConsumption: avgDailyConsumptionGB * 0.95
-                }
-            ];
+            // Calcular consumo diário
+            const { dailyConsumptionGB, validPairs, confidence } = calculateDailyDiskConsumption();
             
-            // 5. Dados atuais
-            const currentRecord = sortedData[sortedData.length - 1];
-            const currentFreePercent = currentRecord.discoLivre;
-            const currentFreeGB = (currentFreePercent / 100) * state.diskCapacity;
-            const currentUsedPercent = 100 - currentFreePercent;
-            const currentUsedGB = state.diskCapacity - currentFreeGB;
-            
-            // 6. Atualizar observação técnica
-            if (avgDailyConsumptionGB <= 0) {
-                elements.obsGrowthRate.textContent = "Crescimento estável ou inconsistente";
-            } else {
-                elements.obsGrowthRate.textContent = 
-                    `Consumo médio: ${avgDailyConsumptionGB.toFixed(2)} GB/dia ` +
-                    `(baseado em ${consumptionSamples.length} amostras)`;
-            }
-            
-            // 7. Períodos de projeção
-            const projectionPeriods = [
-                { label: '30 dias', days: 30 },
-                { label: '60 dias', days: 60 },
-                { label: '120 dias', days: 120 },
-                { label: '360 dias', days: 360 }
-            ];
-            
-            // 8. Gerar projeções
-            elements.projectionGrid.innerHTML = "";
-            
-            projectionPeriods.forEach(period => {
-                const periodCard = document.createElement('div');
-                periodCard.className = 'projection-card';
-                periodCard.style.gridColumn = '1 / -1';
-                periodCard.style.marginBottom = '30px';
-                periodCard.style.borderLeft = '4px solid var(--primary-color)';
-                periodCard.style.backgroundColor = 'rgba(52, 152, 219, 0.03)';
-                
-                let scenariosHTML = '';
-                
-                scenarios.forEach(scenario => {
-                    // Calcular consumo total no período
-                    const totalConsumption = scenario.dailyConsumption * period.days;
-                    
-                    // Calcular espaço livre futuro
-                    const projectedFreeGB = Math.max(0.1, currentFreeGB - totalConsumption);
-                    const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
-                    const projectedUsedGB = state.diskCapacity - projectedFreeGB;
-                    const projectedUsedPercent = 100 - projectedFreePercent;
-                    
-                    // Calcular data futura
-                    const futureDate = new Date();
-                    futureDate.setDate(futureDate.getDate() + period.days);
-                    const formattedDate = utils.formatDate(futureDate);
-                    
-                    // Status baseado no espaço livre
-                    let status = '';
-                    let statusClass = '';
-                    if (projectedFreePercent < 5) {
-                        status = 'CRÍTICO';
-                        statusClass = 'critical';
-                    } else if (projectedFreePercent < 10) {
-                        status = 'ALERTA';
-                        statusClass = 'warning';
-                    } else if (projectedFreePercent < 20) {
-                        status = 'ATENÇÃO';
-                        statusClass = 'attention';
-                    } else {
-                        status = 'NORMAL';
-                        statusClass = 'normal';
-                    }
-                    
-                    scenariosHTML += `
-                        <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; 
-                            background: ${scenario.color}15; border-left: 4px solid ${scenario.color};">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <div>
-                                    <strong style="color: ${scenario.color}; font-size: 1.1rem;">${scenario.name}</strong>
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${scenario.description}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Consumo diário:</div>
-                                    <strong style="color: ${scenario.color}; font-size: 1.1rem;">
-                                        ${scenario.dailyConsumption.toFixed(2)} GB/dia
-                                    </strong>
-                                </div>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                                <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Livre</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedFreePercent < 10 ? '#e74c3c' : projectedFreePercent < 20 ? '#f39c12' : '#2ecc71'}">
-                                        ${projectedFreePercent.toFixed(2)}%
-                                    </div>
-                                    <div style="font-size: 0.9rem;">${projectedFreeGB.toFixed(2)} GB</div>
-                                </div>
-                                
-                                <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Usado</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedUsedPercent > 90 ? '#e74c3c' : projectedUsedPercent > 80 ? '#f39c12' : '#3498db'}">
-                                        ${projectedUsedPercent.toFixed(2)}%
-                                    </div>
-                                    <div style="font-size: 0.9rem;">${projectedUsedGB.toFixed(2)} GB</div>
-                                </div>
-                            </div>
-                            
-                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span>Consumo no período:</span>
-                                    <strong>${totalConsumption.toFixed(2)} GB</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span>Status:</span>
-                                    <strong class="${statusClass}" style="color: ${status === 'CRÍTICO' ? '#e74c3c' : status === 'ALERTA' ? '#f39c12' : status === 'ATENÇÃO' ? '#f39c12' : '#2ecc71'}">
-                                        ${status}
-                                    </strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>Data da projeção:</span>
-                                    <strong>${formattedDate}</strong>
-                                </div>
-                            </div>
+            // Se não houver consumo significativo, mostrar mensagem
+            if (dailyConsumptionGB < 0.01) {
+                elements.projectionCards.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                        <h3 style="margin-bottom: 10px;">Consumo estável ou muito baixo</h3>
+                        <p>Taxa de consumo: <strong>${dailyConsumptionGB.toFixed(2)} GB/dia</strong></p>
+                        <p>Com esta taxa, o disco permanecerá estável por muito tempo.</p>
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(46, 204, 113, 0.1); border-radius: 8px;">
+                            <strong>✅ Status atual:</strong> ${latestUsage.freePercent.toFixed(2)}% livre<br>
+                            <strong>📊 GB livres:</strong> ${latestUsage.freeGB.toFixed(2)} GB
                         </div>
-                    `;
-                });
-                
-                periodCard.innerHTML = `
-                    <div style="margin-bottom: 15px;">
-                        <div style="font-size: 1.3rem; font-weight: bold; color: var(--primary-color);">
-                            📅 Projeção para ${period.label} (${period.days} dias)
-                        </div>
-                        <div style="font-size: 0.95rem; color: var(--text-secondary);">
-                            Data final: ${utils.formatDate(new Date(Date.now() + period.days * 24 * 60 * 60 * 1000))}
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        ${scenariosHTML}
-                    </div>
-                    
-                    <div style="padding: 12px; background: var(--bg-color); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-                        <strong>📝 FÓRMULA APLICADA (Baseada em dados reais):</strong><br>
-                        Espaço Livre Futuro = Espaço Atual (${currentFreeGB.toFixed(2)} GB) - (Consumo Diário Médio × ${period.days} dias)<br>
-                        Baseado em ${consumptionSamples.length} amostras históricas com consumo médio de ${avgDailyConsumptionGB.toFixed(2)} GB/dia
                     </div>
                 `;
-                
-                elements.projectionGrid.appendChild(periodCard);
-            });
+                return;
+            }
             
-            // 9. Card de análise estatística
-            const statsCard = document.createElement('div');
-            statsCard.className = 'projection-card';
-            statsCard.style.gridColumn = '1 / -1';
-            statsCard.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
-            statsCard.style.borderLeft = '4px solid #9b59b6';
+            // Calcular confiança das projeções
+            let confidenceText = "";
+            let confidenceColor = "";
             
-            // Calcular estatísticas
-            const sortedConsumptions = consumptionSamples.map(s => s.dailyConsumption).sort((a, b) => a - b);
-            const medianConsumption = sortedConsumptions.length % 2 === 0 
-                ? (sortedConsumptions[sortedConsumptions.length/2 - 1] + sortedConsumptions[sortedConsumptions.length/2]) / 2
-                : sortedConsumptions[Math.floor(sortedConsumptions.length/2)];
+            if (confidence === 'high') {
+                confidenceText = "Alta confiança";
+                confidenceColor = "var(--secondary-color)";
+            } else if (confidence === 'medium') {
+                confidenceText = "Média confiança";
+                confidenceColor = "var(--warning-color)";
+            } else {
+                confidenceText = "Baixa confiança";
+                confidenceColor = "var(--text-secondary)";
+            }
             
-            // Calcular dias até esgotamento para cada cenário
-            let daysToDepletion = {};
-            scenarios.forEach(scenario => {
-                if (scenario.dailyConsumption > 0) {
-                    daysToDepletion[scenario.name] = Math.floor(currentFreeGB / scenario.dailyConsumption);
-                }
-            });
-            
-            statsCard.innerHTML = `
-                <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: #9b59b6; text-align: center;">
-                    📊 ANÁLISE ESTATÍSTICA DOS DADOS HISTÓRICOS
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Média</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #3498db;">${avgDailyConsumptionGB.toFixed(2)}</div>
-                        <div style="font-size: 0.85rem;">GB/dia</div>
+            // Criar header informativo
+            const infoHeader = document.createElement('div');
+            infoHeader.style.cssText = `
+                grid-column: 1 / -1;
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 15px;
+                border-left: 4px solid ${confidenceColor};
+            `;
+            infoHeader.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <strong>📊 Base de cálculo:</strong> ${validPairs} períodos válidos<br>
+                        <strong>📈 Taxa média:</strong> ${dailyConsumptionGB.toFixed(2)} GB/dia<br>
+                        <strong>🎯 Confiança:</strong> <span style="color: ${confidenceColor}">${confidenceText}</span>
                     </div>
-                    
-                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Mediana</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #2ecc71;">${medianConsumption.toFixed(2)}</div>
-                        <div style="font-size: 0.85rem;">GB/dia</div>
-                    </div>
-                    
-                    <div style="padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Amostras</div>
-                        <div style="font-size: 1.8rem; font-weight: bold; color: #9b59b6;">${consumptionSamples.length}</div>
-                        <div style="font-size: 0.85rem;">registros válidos</div>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--text-color);">📈 Cenários de Projeção (±5%):</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                        ${scenarios.map(scenario => `
-                            <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
-                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">${scenario.dailyConsumption.toFixed(2)} GB/dia</div>
-                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                                    ${scenario.factor === 1.05 ? '+5%' : scenario.factor === 0.95 ? '-5%' : 'base'}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div style="padding: 15px; background: rgba(52, 152, 219, 0.1); border-radius: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">📅 PREVISÃO DE ESGOTAMENTO DO DISCO:</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                        ${scenarios.map(scenario => `
-                            <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
-                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${scenario.name}</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: ${scenario.color};">${daysToDepletion[scenario.name] || '∞'} dias</div>
-                                <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                                    ${daysToDepletion[scenario.name] ? `~${Math.floor(daysToDepletion[scenario.name]/30)} meses` : 'Estável'}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div style="margin-top: 20px; padding: 15px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; border-left: 4px solid #2ecc71;">
-                    <div style="font-weight: bold; margin-bottom: 10px; color: #2ecc71;">🎯 RESUMO DA ANÁLISE:</div>
-                    <div style="font-size: 0.95rem;">
-                        <p>• Baseado em <strong>${consumptionSamples.length}</strong> amostras de consumo real</p>
-                        <p>• Cenários ajustados em <strong>±5%</strong> em relação à média histórica</p>
-                        <p>• Projeções atualizadas automaticamente conforme novos dados</p>
-                        <p>• Sem estimativas - apenas dados reais do sistema</p>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">
+                            ${latestUsage.freePercent.toFixed(2)}% livre
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            ${latestUsage.freeGB.toFixed(2)} GB de ${state.diskCapacity} GB
+                        </div>
                     </div>
                 </div>
             `;
+            elements.projectionCards.appendChild(infoHeader);
             
-            elements.projectionGrid.appendChild(statsCard);
+            // Criar projeções para cada período
+            CONFIG.PROJECTION_DAYS.forEach(days => {
+                const consumptionGB = dailyConsumptionGB * days;
+                const projectedFreeGB = Math.max(0, latestUsage.freeGB - consumptionGB);
+                const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
+                
+                // Calcular data futura
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + days);
+                const formattedDate = utils.formatDate(futureDate);
+                
+                // Determinar status e cor
+                let statusClass = 'status-good';
+                let statusText = 'NORMAL';
+                let statusIcon = '✅';
+                let borderColor = 'var(--secondary-color)';
+                
+                if (projectedFreePercent < CONFIG.DISK_CRITICAL_PERCENT) {
+                    statusClass = 'status-critical';
+                    statusText = 'CRÍTICO';
+                    statusIcon = '🚨';
+                    borderColor = 'var(--danger-color)';
+                } else if (projectedFreePercent < CONFIG.DISK_WARNING_PERCENT) {
+                    statusClass = 'status-warning';
+                    statusText = 'ALERTA';
+                    statusIcon = '⚠️';
+                    borderColor = 'var(--warning-color)';
+                }
+                
+                // Criar card de projeção
+                const card = document.createElement('div');
+                card.className = 'projection-card';
+                card.style.borderLeft = `5px solid ${borderColor}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="projection-title">${days} dias</div>
+                        <div style="font-size: 1.2rem;">${statusIcon}</div>
+                    </div>
+                    <div class="projection-date">${formattedDate}</div>
+                    <div class="projection-value ${statusClass}" style="font-size: 2.2rem;">
+                        ${projectedFreePercent.toFixed(2)}%
+                    </div>
+                    <div style="color: var(--text-secondary); margin: 10px 0; font-size: 1.1rem;">
+                        ${projectedFreeGB.toFixed(2)} GB livres
+                    </div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 6px; margin-top: 10px;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            <strong>Consumo estimado:</strong> ${consumptionGB.toFixed(2)} GB<br>
+                            <strong>Status:</strong> ${statusText}<br>
+                            <strong>Capacidade total:</strong> ${state.diskCapacity} GB
+                        </div>
+                    </div>
+                `;
+                
+                elements.projectionCards.appendChild(card);
+            });
+            
+            // Adicionar projeção de esgotamento total (se aplicável)
+            if (dailyConsumptionGB > 0.01) {
+                const daysToFull = Math.ceil(latestUsage.freeGB / dailyConsumptionGB);
+                
+                if (daysToFull > 0 && daysToFull < 365 * 5) { // Limitar a 5 anos
+                    const fullDate = new Date();
+                    fullDate.setDate(fullDate.getDate() + daysToFull);
+                    const formattedFullDate = utils.formatDate(fullDate);
+                    
+                    const warningCard = document.createElement('div');
+                    warningCard.className = 'projection-card';
+                    warningCard.style.cssText = `
+                        grid-column: 1 / -1;
+                        border-left: 5px solid var(--danger-color);
+                        background: rgba(231, 76, 60, 0.05);
+                    `;
+                    warningCard.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="font-size: 1.5rem;">🚨</div>
+                            <div style="font-weight: bold; font-size: 1.2rem; color: var(--danger-color);">
+                                Projeção de Esgotamento
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin: 20px 0;">
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--danger-color);">
+                                ${daysToFull} dias
+                            </div>
+                            <div style="color: var(--text-secondary); margin-top: 5px;">
+                                até o disco ficar completamente cheio
+                            </div>
+                        </div>
+                        <div style="background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                                <div>
+                                    <strong>Data estimada:</strong><br>
+                                    ${formattedFullDate}
+                                </div>
+                                <div>
+                                    <strong>Taxa atual:</strong><br>
+                                    ${dailyConsumptionGB.toFixed(2)} GB/dia
+                                </div>
+                                <div>
+                                    <strong>GB livres hoje:</strong><br>
+                                    ${latestUsage.freeGB.toFixed(2)} GB
+                                </div>
+                                <div>
+                                    <strong>GB consumidos:</strong><br>
+                                    ${(dailyConsumptionGB * daysToFull).toFixed(2)} GB
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                            ⚠️ Esta projeção assume que a taxa de consumo permanecerá constante
+                        </div>
+                    `;
+                    
+                    elements.projectionCards.appendChild(warningCard);
+                }
+            }
+            
+            console.log(`✅ Projeções atualizadas: ${CONFIG.PROJECTION_DAYS.length} períodos`);
         }
 
         // ============================================
         // FUNÇÕES DE INTERFACE
         // ============================================
-        function updateUI() {
-            const displayData = [...state.data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        function updateCapacityDisplay() {
+            // Atualizar em todos os lugares
+            elements.currentCapacityDisplay.textContent = `${state.diskCapacity} GB`;
+            elements.totalCapacity.textContent = `${state.diskCapacity} GB`;
+            elements.chartCapacity.textContent = `${state.diskCapacity} GB`;
+            elements.infoCapacity.textContent = state.diskCapacity;
+            elements.modalCurrentCapacity.textContent = state.diskCapacity;
+            elements.modalCapacity.textContent = state.diskCapacity;
             
-            if (displayData.length > 0) {
-                const latest = displayData[0];
-                elements.cpuValue.textContent = `${latest.cpu.toFixed(2)}%`;
-                elements.processesValue.textContent = latest.processos;
-                elements.ramValue.textContent = `${latest.ramLivre.toFixed(1)} GB`;
-                elements.swapValue.textContent = `${latest.swapLivre.toFixed(1)} GB`;
-                elements.diskValue.textContent = `${latest.discoLivre.toFixed(2)}%`;
-                elements.lastUpdate.textContent = `${utils.formatDate(latest.timestamp)} ${utils.formatTime(latest.timestamp)}`;
+            // Atualizar mensagens
+            if (state.isAdmin) {
+                elements.capacityHelpText.textContent = 'Digite a nova capacidade em GB e clique em Salvar';
+                elements.capacityMessage.textContent = 'Você pode alterar a capacidade do disco';
+                elements.adminCapacityControls.classList.remove('hidden');
+                elements.capacityInput.disabled = false;
+                elements.capacityInput.placeholder = "Nova capacidade em GB";
+            } else {
+                elements.capacityHelpText.textContent = '🔒 Apenas administradores podem alterar esta configuração';
+                elements.capacityMessage.textContent = 'Referência para cálculos de espaço em disco';
+                elements.adminCapacityControls.classList.add('hidden');
+                elements.capacityInput.disabled = true;
+                elements.capacityInput.placeholder = "Faça login para alterar";
             }
+        }
+
+        function updateUI() {
+            console.log('🔄 Atualizando interface...');
+            
+            if (state.data.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            const latestRecord = state.data[0];
+            updateMainCards(latestRecord);
+            updateCharts();
+            
+            // Atualizar tendência e projeções (FUNÇÕES CORRETAS)
+            calculateAndUpdateDiskTrend();
+            updateProjections();
+            
+            // Atualizar alertas
+            updateAlerts(latestRecord);
             
             if (state.isAdmin) {
                 updateDataTable();
             }
             
-            calculateDetailedProjections();
-            updateCharts();
-            updateProjectionChart();
+            // Atualizar contadores
+            elements.infoRecords.textContent = state.data.length;
+            elements.tableTotalRecords.textContent = state.data.length;
+            elements.totalRecords.textContent = state.data.length;
+            
+            console.log('✅ Interface atualizada');
+        }
+
+        function showEmptyState() {
+            console.log('📭 Mostrando estado vazio...');
+            
+            // Disco
+            elements.currentFreePercent.textContent = "0.00%";
+            elements.currentFreeGB.textContent = "0.0 GB";
+            elements.currentUsedGB.textContent = "0.0 GB";
+            elements.lastUpdateTime.textContent = "--:--";
+            
+            // CPU
+            elements.currentCpuPercent.textContent = "0.00%";
+            elements.cpuStatus.textContent = "SEM DADOS";
+            elements.cpuTrend.textContent = "0.00%";
+            elements.cpuAverage.textContent = "0.00%";
+            elements.cpuMax.textContent = "0.00%";
+            
+            // RAM
+            elements.currentRamFree.textContent = "0.0 GB";
+            elements.ramStatus.textContent = "SEM DADOS";
+            elements.ramTrend.textContent = "0.0 GB";
+            elements.ramAverage.textContent = "0.0 GB";
+            elements.ramMin.textContent = "0.0 GB";
+            
+            // Tendência
+            elements.trendIcon.textContent = "📊";
+            elements.trendText.textContent = "0.00 GB/dia";
+            elements.daysRemaining.textContent = "∞";
+            elements.diskStatusText.textContent = "SEM DADOS";
+            elements.periodDays.textContent = "0 dias";
+            
+            // Limpar gráficos
+            clearCharts();
+            
+            // Mostrar projeções vazias
+            elements.projectionCards.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                    <h3 style="margin-bottom: 10px;">Adicione registros para ver as projeções</h3>
+                    <p>O sistema precisa de dados históricos para calcular projeções futuras.</p>
+                    <div style="margin-top: 20px;">
+                        <button id="loadSampleProjBtn" class="btn btn-primary" style="margin: 5px;">
+                            <span>🧪</span> Carregar Dados de Exemplo
+                        </button>
+                        <button id="addRecordProjBtn" class="btn btn-secondary" style="margin: 5px;">
+                            <span>➕</span> Adicionar Primeiro Registro
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Adicionar event listeners aos botões
+            setTimeout(() => {
+                const sampleBtn = document.getElementById('loadSampleProjBtn');
+                const addBtn = document.getElementById('addRecordProjBtn');
+                
+                if (sampleBtn) {
+                    sampleBtn.addEventListener('click', () => {
+                        if (state.isAdmin) {
+                            loadSampleData();
+                        } else {
+                            utils.showAlert('warning', 'Atenção', 'Faça login como administrador para carregar dados de exemplo');
+                        }
+                    });
+                }
+                
+                if (addBtn) {
+                    addBtn.addEventListener('click', () => {
+                        if (state.isAdmin) {
+                            openEditModal();
+                        } else {
+                            utils.showAlert('warning', 'Atenção', 'Faça login como administrador para adicionar registros');
+                        }
+                    });
+                }
+            }, 100);
+        }
+
+        function updateMainCards(latestRecord) {
+            // Calcular uso atual do DISCO
+            const diskUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            // Atualizar card do DISCO
+            elements.currentFreePercent.textContent = `${diskUsage.freePercent}%`;
+            elements.currentFreeGB.textContent = `${diskUsage.freeGB.toFixed(2)} GB`;
+            elements.currentUsedGB.textContent = `${diskUsage.usedGB.toFixed(2)} GB`;
+            elements.lastUpdateTime.textContent = utils.formatTime(latestRecord.timestamp);
+            
+            // Colorir o percentual do DISCO baseado no status
+            if (diskUsage.freePercent < CONFIG.DISK_CRITICAL_PERCENT) {
+                elements.currentFreePercent.classList.add('status-critical');
+                elements.currentFreePercent.classList.remove('status-warning', 'status-good');
+            } else if (diskUsage.freePercent < CONFIG.DISK_WARNING_PERCENT) {
+                elements.currentFreePercent.classList.add('status-warning');
+                elements.currentFreePercent.classList.remove('status-critical', 'status-good');
+            } else {
+                elements.currentFreePercent.classList.add('status-good');
+                elements.currentFreePercent.classList.remove('status-critical', 'status-warning');
+            }
+            
+            // Atualizar card da CPU
+            elements.currentCpuPercent.textContent = `${latestRecord.cpu.toFixed(2)}%`;
+            
+            // Calcular estatísticas da CPU
+            const cpuStats = utils.calculateCpuStats(state.data);
+            if (cpuStats) {
+                elements.cpuAverage.textContent = `${cpuStats.average}%`;
+                elements.cpuMax.textContent = `${cpuStats.max}%`;
+                elements.cpuTrend.textContent = `${cpuStats.trend > 0 ? '+' : ''}${cpuStats.trend}%`;
+                
+                // Status da CPU
+                if (latestRecord.cpu > CONFIG.CPU_CRITICAL_PERCENT) {
+                    elements.cpuStatus.textContent = "CRÍTICO";
+                    elements.cpuStatus.classList.add('status-critical');
+                    elements.cpuStatus.classList.remove('status-warning', 'status-good');
+                } else if (latestRecord.cpu > CONFIG.CPU_WARNING_PERCENT) {
+                    elements.cpuStatus.textContent = "ALERTA";
+                    elements.cpuStatus.classList.add('status-warning');
+                    elements.cpuStatus.classList.remove('status-critical', 'status-good');
+                } else {
+                    elements.cpuStatus.textContent = "NORMAL";
+                    elements.cpuStatus.classList.add('status-good');
+                    elements.cpuStatus.classList.remove('status-critical', 'status-warning');
+                }
+            }
+            
+            // Atualizar card da RAM
+            elements.currentRamFree.textContent = `${latestRecord.ramLivre.toFixed(1)} GB`;
+            
+            // Calcular estatísticas da RAM
+            const ramStats = utils.calculateRamStats(state.data);
+            if (ramStats) {
+                elements.ramAverage.textContent = `${ramStats.average} GB`;
+                elements.ramMin.textContent = `${ramStats.min} GB`;
+                elements.ramTrend.textContent = `${ramStats.trend > 0 ? '+' : ''}${ramStats.trend} GB`;
+                
+                // Status da RAM
+                if (latestRecord.ramLivre < CONFIG.RAM_CRITICAL_GB) {
+                    elements.ramStatus.textContent = "CRÍTICO";
+                    elements.ramStatus.classList.add('status-critical');
+                    elements.ramStatus.classList.remove('status-warning', 'status-good');
+                } else if (latestRecord.ramLivre < CONFIG.RAM_WARNING_GB) {
+                    elements.ramStatus.textContent = "ALERTA";
+                    elements.ramStatus.classList.add('status-warning');
+                    elements.ramStatus.classList.remove('status-critical', 'status-good');
+                } else {
+                    elements.ramStatus.textContent = "NORMAL";
+                    elements.ramStatus.classList.add('status-good');
+                    elements.ramStatus.classList.remove('status-critical', 'status-warning');
+                }
+            }
+        }
+
+        function updateCharts() {
+            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // Gráfico do DISCO
+            updateDiskChart(sortedData);
+            
+            // Gráfico da CPU
+            updateCpuChart(sortedData);
+            
+            // Gráfico da RAM
+            updateRamChart(sortedData);
+            
+            // Gráfico de Pizza (último registro)
+            updatePieChart(sortedData[sortedData.length - 1]);
+        }
+
+        function updateDiskChart(sortedData) {
+            const ctx = document.getElementById('diskChart').getContext('2d');
+            
+            if (state.charts.disk) {
+                state.charts.disk.destroy();
+            }
+            
+            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
+            const data = sortedData.map(record => 
+                utils.calculateCurrentUsage(record.discoLivre, state.diskCapacity).freePercent
+            );
+            
+            state.charts.disk = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Espaço Livre (%)',
+                        data: data,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getChartOptions('Espaço Livre (%)', '%', 0, 100)
+            });
+        }
+
+        function updateCpuChart(sortedData) {
+            const ctx = document.getElementById('cpuChart').getContext('2d');
+            
+            if (state.charts.cpu) {
+                state.charts.cpu.destroy();
+            }
+            
+            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
+            const data = sortedData.map(record => record.cpu);
+            
+            state.charts.cpu = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Uso da CPU (%)',
+                        data: data,
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getChartOptions('Uso da CPU (%)', '%', 0, 100)
+            });
+        }
+
+        function updateRamChart(sortedData) {
+            const ctx = document.getElementById('ramChart').getContext('2d');
+            
+            if (state.charts.ram) {
+                state.charts.ram.destroy();
+            }
+            
+            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
+            const data = sortedData.map(record => record.ramLivre);
+            
+            state.charts.ram = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'RAM Livre (GB)',
+                        data: data,
+                        borderColor: '#1abc9c',
+                        backgroundColor: 'rgba(26, 188, 156, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getChartOptions('RAM Livre (GB)', 'GB')
+            });
+        }
+
+        function updatePieChart(latestRecord) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            if (state.charts.pie) {
+                state.charts.pie.destroy();
+            }
+            
+            const usage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            state.charts.pie = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Espaço Usado', 'Espaço Livre'],
+                    datasets: [{
+                        data: [100 - usage.freePercent, usage.freePercent],
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.8)',
+                            'rgba(46, 204, 113, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(231, 76, 60, 1)',
+                            'rgba(46, 204, 113, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.raw;
+                                    let gbValue;
+                                    
+                                    if (label === 'Espaço Livre') {
+                                        gbValue = usage.freeGB;
+                                    } else {
+                                        gbValue = usage.usedGB;
+                                    }
+                                    
+                                    return `${label}: ${value.toFixed(2)}% (${gbValue.toFixed(2)} GB)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getChartOptions(title, unit, min = null, max = null) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        title: {
+                            display: true,
+                            text: title,
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        },
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
+                            callback: function(value) {
+                                return value + (unit ? unit : '');
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        }
+                    }
+                }
+            };
+        }
+
+        function clearCharts() {
+            // Destruir todos os gráficos
+            Object.values(state.charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            
+            // Limpar referências
+            state.charts = {
+                disk: null,
+                cpu: null,
+                ram: null,
+                pie: null
+            };
+        }
+
+        function updateAlerts(latestRecord) {
+            // Limpar alertas antigos
+            elements.systemAlerts.innerHTML = '';
+            
+            const diskUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            // Alertas do DISCO
+            if (diskUsage.freePercent < CONFIG.DISK_CRITICAL_PERCENT) {
+                utils.showAlert('danger', '⚠️ ESPAÇO CRÍTICO NO DISCO', 
+                    `Apenas ${diskUsage.freePercent}% (${diskUsage.freeGB.toFixed(2)} GB) livres no disco D:!`);
+            }
+            else if (diskUsage.freePercent < CONFIG.DISK_WARNING_PERCENT) {
+                utils.showAlert('warning', '⚠️ ESPAÇO BAIXO NO DISCO', 
+                    `Apenas ${diskUsage.freePercent}% livres. Considere liberar espaço.`);
+            }
+            
+            // Alertas da CPU
+            if (latestRecord.cpu > CONFIG.CPU_CRITICAL_PERCENT) {
+                utils.showAlert('cpu', '⚙️ CPU EM NÍVEL CRÍTICO', 
+                    `Uso da CPU em ${latestRecord.cpu.toFixed(2)}%! Verifique o servidor.`);
+            }
+            else if (latestRecord.cpu > CONFIG.CPU_WARNING_PERCENT) {
+                utils.showAlert('cpu', '⚙️ ALTA UTILIZAÇÃO DA CPU', 
+                    `CPU em ${latestRecord.cpu.toFixed(2)}%. Monitorar desempenho.`);
+            }
+            
+            // Alertas da RAM
+            if (latestRecord.ramLivre < CONFIG.RAM_CRITICAL_GB) {
+                utils.showAlert('ram', '💽 RAM CRÍTICA', 
+                    `Apenas ${latestRecord.ramLivre.toFixed(1)} GB de RAM livre!`);
+            }
+            else if (latestRecord.ramLivre < CONFIG.RAM_WARNING_GB) {
+                utils.showAlert('ram', '💽 RAM BAIXA', 
+                    `Apenas ${latestRecord.ramLivre.toFixed(1)} GB de RAM livre.`);
+            }
+            
+            // Alerta informativo se for admin
+            else if (state.isAdmin && state.data.length > 0) {
+                utils.showAlert('success', '✅ SISTEMA OPERACIONAL', 
+                    `Todos os sistemas monitorados. ${state.data.length} registros.`);
+            }
         }
 
         function updateDataTable() {
-            elements.dataTableBody.innerHTML = "";
+            elements.dataTableBody.innerHTML = '';
             
-            const displayData = [...state.data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            displayData.forEach(record => {
+            if (state.data.length === 0) {
                 const row = document.createElement('tr');
-                const diskUsage = utils.calculateDiskUsage(record.discoLivre);
-                
                 row.innerHTML = `
-                    <td>${utils.formatDate(record.timestamp)}</td>
-                    <td>${utils.formatTime(record.timestamp)}</td>
-                    <td>${record.cpu.toFixed(2)}%</td>
-                    <td>${record.processos}</td>
-                    <td>${record.ramLivre.toFixed(1)} GB</td>
-                    <td>${record.swapLivre.toFixed(1)} GB</td>
-                    <td class="two-decimals">${record.discoLivre.toFixed(2)}%</td>
-                    <td>${record.observacoes || ""}</td>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary)">
+                        Nenhum registro encontrado
+                    </td>
+                `;
+                elements.dataTableBody.appendChild(row);
+                return;
+            }
+            
+            state.data.forEach(record => {
+                const usage = utils.calculateCurrentUsage(record.discoLivre, state.diskCapacity);
+                const originalCapacity = record.capacidadeRegistro || state.diskCapacity;
+                const originalFreeGB = (record.discoLivre / 100) * originalCapacity;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${utils.formatDateTime(record.timestamp)}</td>
+                    <td>
+                        <strong>${record.discoLivre.toFixed(2)}%</strong><br>
+                        <small style="color: var(--text-secondary)">${usage.freeGB.toFixed(2)} GB atuais</small>
+                    </td>
+                    <td>
+                        <span class="${record.cpu > CONFIG.CPU_CRITICAL_PERCENT ? 'status-critical' : 
+                                      record.cpu > CONFIG.CPU_WARNING_PERCENT ? 'status-warning' : 'status-good'}">
+                            ${record.cpu.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="${record.ramLivre < CONFIG.RAM_CRITICAL_GB ? 'status-critical' : 
+                                      record.ramLivre < CONFIG.RAM_WARNING_GB ? 'status-warning' : 'status-good'}">
+                            ${record.ramLivre.toFixed(1)} GB
+                        </span>
+                    </td>
+                    <td>${record.observacoes || '-'}</td>
+                    <td>
+                        ${originalCapacity} GB<br>
+                        <small style="color: var(--text-secondary)">${originalFreeGB.toFixed(2)} GB na época</small>
+                    </td>
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn btn-primary edit-btn" data-id="${record.id}">
@@ -1875,6 +2504,7 @@
                 elements.dataTableBody.appendChild(row);
             });
             
+            // Adicionar event listeners aos botões
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', () => editRecord(btn.dataset.id));
             });
@@ -1885,243 +2515,44 @@
         }
 
         async function deleteRecord(id) {
-            if (!confirm("Tem certeza que deseja excluir este registro do Firebase?")) return;
+            if (!confirm('Tem certeza que deseja excluir este registro?\nEsta ação não pode ser desfeita.')) {
+                return;
+            }
             
             try {
                 await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).delete();
-                console.log("✅ Registro excluído do Firebase:", id);
-                utils.showNotification("Registro excluído com sucesso!");
+                utils.showAlert('success', 'Sucesso', 'Registro excluído com sucesso');
             } catch (error) {
-                console.error("❌ Erro ao excluir registro do Firebase:", error);
-                alert("Erro ao excluir registro: " + error.message);
+                console.error('❌ Erro ao excluir registro:', error);
+                utils.showAlert('danger', 'Erro', 'Falha ao excluir registro: ' + error.message);
             }
         }
 
-        async function clearAllData() {
-            if (!confirm("⚠️ ATENÇÃO: Esta ação irá excluir TODOS os dados do Firebase. Tem certeza?")) return;
-            
-            try {
-                const snapshot = await firestore.collection(CONFIG.COLLECTION_NAME).get();
-                const batch = firestore.batch();
-                
-                snapshot.docs.forEach((doc) => {
-                    batch.delete(doc.ref);
-                });
-                
-                await batch.commit();
-                console.log("✅ Todos os dados foram excluídos do Firebase");
-                utils.showNotification("Todos os dados foram excluídos do Firebase!");
-                
-            } catch (error) {
-                console.error("❌ Erro ao limpar dados do Firebase:", error);
-                alert("Erro ao limpar dados: " + error.message);
-            }
-        }
-
-        function updateCharts() {
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-            if (sortedData.length === 0) return;
-            
-            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
-            const diskPercentData = sortedData.map(record => parseFloat(record.discoLivre.toFixed(2)));
-            
-            const lineCtx = document.getElementById('lineChart').getContext('2d');
-            if (lineChart) lineChart.destroy();
-            
-            lineChart = new Chart(lineCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Espaço Livre (%)',
-                        data: diskPercentData,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: getLineChartOptions()
-            });
-            
-            const latest = sortedData[sortedData.length - 1];
-            const diskUsage = utils.calculateDiskUsage(latest.discoLivre);
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            
-            if (pieChart) pieChart.destroy();
-            
-            pieChart = new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Usado', 'Livre'],
-                    datasets: [{
-                        data: [diskUsage.usedPercent, diskUsage.freePercent],
-                        backgroundColor: [
-                            'rgba(231, 76, 60, 0.8)',
-                            'rgba(46, 204, 113, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(231, 76, 60, 1)',
-                            'rgba(46, 204, 113, 1)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: getPieChartOptions(diskUsage)
-            });
-        }
-
-        function updateProjectionChart() {
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-            if (sortedData.length < 3) {
-                const ctx = document.getElementById('projectionLineChart').getContext('2d');
-                if (projectionLineChart) projectionLineChart.destroy();
-                
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                ctx.fillStyle = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Adicione pelo menos 3 registros para ver o gráfico', ctx.canvas.width / 2, ctx.canvas.height / 2);
-                return;
-            }
-            
-            // Obter a data mais recente dos dados
-            const latestDataDate = new Date(sortedData[sortedData.length - 1].timestamp);
-            
-            // Calcular a data de corte baseada na data mais recente
-            const cutoffDate = new Date(latestDataDate);
-            cutoffDate.setDate(cutoffDate.getDate() - state.projectionChartRange);
-            
-            // Filtrar dados que estão dentro do período selecionado
-            const filteredData = sortedData.filter(record => {
-                const recordDate = new Date(record.timestamp);
-                return recordDate >= cutoffDate;
-            });
-            
-            if (filteredData.length === 0) {
-                const ctx = document.getElementById('projectionLineChart').getContext('2d');
-                if (projectionLineChart) projectionLineChart.destroy();
-                
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                ctx.fillStyle = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`Nenhum dado disponível para os últimos ${state.projectionChartRange} dias`, ctx.canvas.width / 2, ctx.canvas.height / 2);
-                return;
-            }
-            
-            // Preparar dados para o gráfico
-            const labels = filteredData.map(record => utils.formatDate(record.timestamp));
-            const diskPercentData = filteredData.map(record => parseFloat(record.discoLivre.toFixed(2)));
-            
-            // Configurações do gráfico baseadas no tema
-            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
-            const gridColor = state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-            
-            const ctx = document.getElementById('projectionLineChart').getContext('2d');
-            if (projectionLineChart) projectionLineChart.destroy();
-            
-            projectionLineChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Espaço Livre (%)',
-                        data: diskPercentData,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor,
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            min: 0,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Espaço Livre (%)',
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
-                            },
-                            ticks: {
-                                color: textColor,
-                                callback: function(value) {
-                                    return value.toFixed(1) + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: textColor
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Espaço Livre: ${context.raw.toFixed(2)}%`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ============================================
-        // FUNÇÕES AUXILIARES
-        // ============================================
         function openEditModal(record = null) {
             if (record) {
-                elements.editModalTitle.textContent = "✏️ Editar Registro";
+                elements.editModalTitle.textContent = '✏️ Editar Registro';
                 state.editingId = record.id;
                 
                 elements.inputDate.value = utils.formatDate(record.timestamp);
                 elements.inputTime.value = utils.formatTime(record.timestamp);
+                elements.inputDisk.value = record.discoLivre;
                 elements.inputCpu.value = record.cpu;
-                elements.inputProcesses.value = record.processos;
                 elements.inputRam.value = record.ramLivre;
-                elements.inputSwap.value = record.swapLivre;
-                elements.inputDisk.value = record.discoLivre.toFixed(2);
-                elements.inputObservations.value = record.observacoes || "";
+                elements.inputObservations.value = record.observacoes || '';
             } else {
-                elements.editModalTitle.textContent = "➕ Adicionar Registro";
+                elements.editModalTitle.textContent = '📝 Novo Registro de Monitoramento';
                 state.editingId = null;
                 
                 const now = new Date();
                 elements.inputDate.value = utils.formatDate(now);
                 elements.inputTime.value = utils.formatTime(now);
-                elements.inputCpu.value = "";
-                elements.inputProcesses.value = "";
-                elements.inputRam.value = "";
-                elements.inputSwap.value = "";
-                elements.inputDisk.value = "";
-                elements.inputObservations.value = "";
+                elements.inputDisk.value = '';
+                elements.inputCpu.value = '';
+                elements.inputRam.value = '';
+                elements.inputObservations.value = '';
             }
             
-            elements.editModal.style.display = "flex";
+            elements.editModal.style.display = 'flex';
         }
 
         function editRecord(id) {
@@ -2133,32 +2564,112 @@
             const dataToExport = {
                 data: state.data,
                 config: {
-                    diskCapacity: state.diskCapacity,
-                    lastBackup: new Date().toISOString(),
-                    version: "1.0.0"
-                },
-                metadata: {
+                    currentCapacity: state.diskCapacity,
+                    exportDate: new Date().toISOString(),
                     totalRecords: state.data.length
                 }
             };
             
             const dataStr = JSON.stringify(dataToExport, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const exportFileDefaultName = `esus_monitoramento_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const exportFileDefaultName = `monitoramento_completo_${new Date().toISOString().slice(0, 10)}.json`;
             
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', exportFileDefaultName);
             linkElement.click();
             
-            showBackupNotification();
+            utils.showAlert('success', 'Sucesso', 'Backup exportado com sucesso');
         }
 
-        function showBackupNotification() {
-            elements.backupNotification.classList.remove('hidden');
-            setTimeout(() => {
-                elements.backupNotification.classList.add('hidden');
-            }, 3000);
+        async function loadSampleData() {
+            if (!confirm('Deseja carregar dados de exemplo?\n\nIsso criará registros simulados para testar o sistema.')) return;
+            
+            const sampleData = [
+                {
+                    timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 85.0,
+                    cpu: 15.5,
+                    ramLivre: 62.3,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Início do monitoramento"
+                },
+                {
+                    timestamp: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 83.5,
+                    cpu: 18.2,
+                    ramLivre: 61.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Crescimento normal"
+                },
+                {
+                    timestamp: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 82.0,
+                    cpu: 22.7,
+                    ramLivre: 60.5,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Backup semanal"
+                },
+                {
+                    timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 80.0,
+                    cpu: 25.3,
+                    ramLivre: 59.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Pico de uso identificado"
+                },
+                {
+                    timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 78.5,
+                    cpu: 19.8,
+                    ramLivre: 60.2,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Uso normalizado"
+                },
+                {
+                    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 76.0,
+                    cpu: 32.5,
+                    ramLivre: 58.5,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Processamento em lote"
+                },
+                {
+                    timestamp: new Date().toISOString(),
+                    discoLivre: 74.5,
+                    cpu: 28.7,
+                    ramLivre: 59.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Última leitura - sistema estável"
+                }
+            ];
+            
+            try {
+                let successCount = 0;
+                
+                for (const record of sampleData) {
+                    const id = utils.generateId();
+                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
+                        id: id,
+                        timestamp: record.timestamp,
+                        discoLivre: record.discoLivre,
+                        cpu: record.cpu,
+                        ramLivre: record.ramLivre,
+                        capacidadeRegistro: record.capacidadeRegistro,
+                        discoLivreGB: (record.discoLivre / 100) * record.capacidadeRegistro,
+                        observacoes: record.observacoes,
+                        sampleData: true,
+                        created: new Date().toISOString()
+                    });
+                    successCount++;
+                }
+                
+                utils.showAlert('success', 'Sucesso', `${successCount} registros de exemplo carregados!`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados de exemplo:', error);
+                utils.showAlert('danger', 'Erro', 'Falha ao carregar dados: ' + error.message);
+            }
         }
 
         function importFromJSON(event) {
@@ -2170,227 +2681,52 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    if (importedData.data && Array.isArray(importedData.data) && importedData.data.length > 0) {
-                        const isValid = importedData.data.every(item => 
-                            item.timestamp && 
-                            typeof item.cpu === 'number' &&
-                            typeof item.processos === 'number' &&
-                            typeof item.ramLivre === 'number' &&
-                            typeof item.swapLivre === 'number' &&
-                            typeof item.discoLivre === 'number'
-                        );
-                        
-                        if (!isValid) {
-                            alert("Arquivo JSON com formato inválido!");
-                            return;
-                        }
-                        
-                        if (!confirm(`Deseja importar ${importedData.data.length} registros para o Firebase?`)) {
-                            return;
-                        }
-                        
-                        let successCount = 0;
-                        let errorCount = 0;
-                        
-                        for (const item of importedData.data) {
-                            try {
-                                const id = item.id || utils.generateId();
-                                let discoLivre = item.discoLivre;
-                                
-                                if (discoLivre > 100) {
-                                    discoLivre = utils.gbToPercent(discoLivre);
-                                }
-                                
-                                // Garantir 2 casas decimais
-                                discoLivre = parseFloat(discoLivre.toFixed(2));
-                                
-                                await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
-                                    timestamp: item.timestamp,
-                                    cpu: item.cpu,
-                                    processos: item.processos,
-                                    ramLivre: item.ramLivre,
-                                    swapLivre: item.swapLivre,
-                                    discoLivre: discoLivre,
-                                    observacoes: item.observacoes || ""
-                                });
-                                successCount++;
-                            } catch (error) {
-                                errorCount++;
-                            }
-                        }
-                        
-                        if (importedData.config && importedData.config.diskCapacity) {
-                            state.diskCapacity = importedData.config.diskCapacity;
-                            await saveDiskCapacityToFirebase();
-                            updateCapacityDisplay();
-                        }
-                        
-                        alert(`✅ Importação concluída!\n\nSucesso: ${successCount} registros\nErros: ${errorCount} registros`);
-                        
-                    } else {
-                        alert("Arquivo JSON vazio ou inválido!");
+                    if (!importedData.data || !Array.isArray(importedData.data)) {
+                        utils.showAlert('danger', 'Erro', 'Arquivo JSON inválido');
+                        return;
                     }
+                    
+                    if (!confirm(`Deseja importar ${importedData.data.length} registros?`)) {
+                        elements.importFile.value = '';
+                        return;
+                    }
+                    
+                    let successCount = 0;
+                    
+                    for (const item of importedData.data) {
+                        try {
+                            const id = item.id || utils.generateId();
+                            await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
+                                timestamp: item.timestamp,
+                                discoLivre: item.discoLivre,
+                                cpu: item.cpu,
+                                ramLivre: item.ramLivre,
+                                capacidadeRegistro: item.capacidadeRegistro || state.diskCapacity,
+                                discoLivreGB: item.discoLivreGB || (item.discoLivre / 100) * (item.capacidadeRegistro || state.diskCapacity),
+                                observacoes: item.observacoes || '',
+                                imported: true,
+                                importDate: new Date().toISOString()
+                            });
+                            successCount++;
+                        } catch (error) {
+                            console.error('Erro ao importar registro:', error);
+                        }
+                    }
+                    
+                    utils.showAlert('success', 'Sucesso', `${successCount} registros importados com sucesso`);
+                    
                 } catch (error) {
-                    alert("Erro ao ler arquivo JSON: " + error.message);
+                    utils.showAlert('danger', 'Erro', 'Erro ao ler arquivo: ' + error.message);
                 }
                 
-                elements.importFile.value = "";
+                elements.importFile.value = '';
             };
             
             reader.readAsText(file);
         }
 
-        async function loadSampleData() {
-            if (!confirm("Deseja carregar dados de exemplo no Firebase?")) return;
-            
-            const sampleData = [
-                {
-                    timestamp: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.2,
-                    processos: 120,
-                    ramLivre: 58.0,
-                    swapLivre: 11.0,
-                    discoLivre: 45.0,
-                    observacoes: "Início do monitoramento"
-                },
-                {
-                    timestamp: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.3,
-                    processos: 122,
-                    ramLivre: 57.5,
-                    swapLivre: 10.9,
-                    discoLivre: 43.5,
-                    observacoes: ""
-                },
-                {
-                    timestamp: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.4,
-                    processos: 124,
-                    ramLivre: 57.0,
-                    swapLivre: 10.8,
-                    discoLivre: 42.0,
-                    observacoes: "Crescimento consistente"
-                },
-                {
-                    timestamp: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.5,
-                    processos: 125,
-                    ramLivre: 56.5,
-                    swapLivre: 10.7,
-                    discoLivre: 40.5,
-                    observacoes: ""
-                },
-                {
-                    timestamp: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.6,
-                    processos: 126,
-                    ramLivre: 56.0,
-                    swapLivre: 10.6,
-                    discoLivre: 39.0,
-                    observacoes: "Leitura mensal"
-                },
-                {
-                    timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    cpu: 4.7,
-                    processos: 128,
-                    ramLivre: 55.5,
-                    swapLivre: 10.5,
-                    discoLivre: 37.5,
-                    observacoes: ""
-                },
-                {
-                    timestamp: new Date().toISOString(),
-                    cpu: 4.8,
-                    processos: 130,
-                    ramLivre: 55.0,
-                    swapLivre: 10.4,
-                    discoLivre: 36.0,
-                    observacoes: "Última leitura - 64% usado"
-                }
-            ];
-            
-            try {
-                let successCount = 0;
-                
-                for (const record of sampleData) {
-                    const id = utils.generateId();
-                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
-                        timestamp: record.timestamp,
-                        cpu: record.cpu,
-                        processos: record.processos,
-                        ramLivre: record.ramLivre,
-                        swapLivre: record.swapLivre,
-                        discoLivre: parseFloat(record.discoLivre.toFixed(2)),
-                        observacoes: record.observacoes || ""
-                    });
-                    successCount++;
-                }
-                
-                alert(`✅ ${successCount} registros de exemplo carregados com sucesso no Firebase!`);
-                
-            } catch (error) {
-                console.error("❌ Erro ao carregar dados de exemplo:", error);
-                alert("Erro ao carregar dados de exemplo: " + error.message);
-            }
-        }
-
         // ============================================
-        // FUNÇÕES DE TEMA E AUTENTICAÇÃO
-        // ============================================
-        function toggleTheme() {
-            state.isDarkMode = !state.isDarkMode;
-            
-            if (state.isDarkMode) {
-                document.body.classList.add("dark-mode");
-                elements.themeIcon.textContent = "☀️";
-            } else {
-                document.body.classList.remove("dark-mode");
-                elements.themeIcon.textContent = "🌙";
-            }
-            
-            if (lineChart) lineChart.update();
-            if (pieChart) pieChart.update();
-            if (projectionLineChart) projectionLineChart.update();
-        }
-
-        function login() {
-            const username = elements.username.value;
-            const password = elements.password.value;
-            
-            if (username === CONFIG.ADMIN_USER && password === CONFIG.ADMIN_PASSWORD) {
-                state.isAdmin = true;
-                elements.adminPanel.classList.remove("hidden");
-                elements.loginModal.style.display = "none";
-                elements.loginError.classList.add("hidden");
-                elements.adminLoginBtn.innerHTML = '<span>🚪</span> Sair';
-                elements.username.value = '';
-                elements.password.value = '';
-                
-                // Habilitar o formulário de capacidade
-                updateCapacityFormAccess();
-                
-                updateDataTable();
-                updateFirebaseStats();
-                
-                utils.showNotification("Login administrativo realizado com sucesso!");
-            } else {
-                elements.loginError.classList.remove("hidden");
-            }
-        }
-
-        function logout() {
-            state.isAdmin = false;
-            elements.adminPanel.classList.add("hidden");
-            elements.adminLoginBtn.innerHTML = '<span>🔐</span> Acesso Administrativo';
-            
-            // Desabilitar o formulário de capacidade
-            updateCapacityFormAccess();
-            
-            utils.showNotification("Logout realizado com sucesso!");
-        }
-
-        // ============================================
-        // FUNÇÕES DE VALIDAÇÃO E FORMULÁRIO
+        // FUNÇÕES DE VALIDAÇÃO
         // ============================================
         function initializeMasks() {
             elements.inputDate.addEventListener('input', function(e) {
@@ -2416,17 +2752,29 @@
                 e.target.value = value;
             });
             
-            // Validação para aceitar 2 casas decimais no disco
             elements.inputDisk.addEventListener('input', function(e) {
                 let value = e.target.value.replace(/[^\d.]/g, '');
                 
-                // Garantir que não tenha mais de um ponto decimal
                 const parts = value.split('.');
                 if (parts.length > 2) {
                     value = parts[0] + '.' + parts.slice(1).join('');
                 }
                 
-                // Limitar a 2 casas decimais
+                if (parts.length === 2 && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+                
+                e.target.value = value;
+            });
+            
+            elements.inputCpu.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d.]/g, '');
+                
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
                 if (parts.length === 2 && parts[1].length > 2) {
                     value = parts[0] + '.' + parts[1].substring(0, 2);
                 }
@@ -2438,52 +2786,37 @@
         function validateForm() {
             const date = elements.inputDate.value;
             const time = elements.inputTime.value;
-            const cpu = parseFloat(elements.inputCpu.value);
-            const processes = parseInt(elements.inputProcesses.value);
-            const ram = parseFloat(elements.inputRam.value);
-            const swap = parseFloat(elements.inputSwap.value);
             const disk = parseFloat(elements.inputDisk.value);
+            const cpu = parseFloat(elements.inputCpu.value);
+            const ram = parseFloat(elements.inputRam.value);
             
             if (!utils.validateDate(date)) {
-                alert("Data inválida! Use o formato DD/MM/AAAA.");
+                alert('Data inválida! Use o formato DD/MM/AAAA.');
+                elements.inputDate.focus();
                 return false;
             }
             
             if (!utils.validateTime(time)) {
-                alert("Hora inválida! Use o formato HH:MM.");
+                alert('Hora inválida! Use o formato HH:MM.');
+                elements.inputTime.focus();
+                return false;
+            }
+            
+            if (isNaN(disk) || disk < 0) {
+                alert('Valor do disco inválido! Digite um número positivo.');
+                elements.inputDisk.focus();
                 return false;
             }
             
             if (isNaN(cpu) || cpu < 0 || cpu > 100) {
-                alert("CPU deve ser um valor entre 0 e 100%.");
-                return false;
-            }
-            
-            if (isNaN(processes) || processes < 0) {
-                alert("Processos deve ser um número positivo.");
+                alert('Valor da CPU inválido! Digite um número entre 0 e 100.');
+                elements.inputCpu.focus();
                 return false;
             }
             
             if (isNaN(ram) || ram < 0) {
-                alert("RAM livre deve ser um número positivo.");
-                return false;
-            }
-            
-            if (isNaN(swap) || swap < 0) {
-                alert("Swap livre deve ser um número positivo.");
-                return false;
-            }
-            
-            if (isNaN(disk) || disk < 0 || disk > 100) {
-                alert("Disco livre deve ser um valor entre 0.00 e 100.00%.");
-                return false;
-            }
-            
-            // Validar que tem no máximo 2 casas decimais
-            const diskStr = elements.inputDisk.value.toString();
-            const decimalParts = diskStr.split('.');
-            if (decimalParts.length === 2 && decimalParts[1].length > 2) {
-                alert("Disco livre deve ter no máximo 2 casas decimais.");
+                alert('Valor da RAM inválido! Digite um número positivo.');
+                elements.inputRam.focus();
                 return false;
             }
             
@@ -2491,103 +2824,79 @@
         }
 
         // ============================================
-        // FUNÇÕES AUXILIARES DE GRÁFICOS
+        // FUNÇÕES DE AUTENTICAÇÃO
         // ============================================
-        function getLineChartOptions() {
-            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
-            const gridColor = state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        function login() {
+            const username = elements.username.value;
+            const password = elements.password.value;
             
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor
-                        }
-                    },
-                    y: {
-                        min: 0,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Espaço Livre (%)',
-                            color: textColor
-                        },
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor,
-                            callback: function(value) {
-                                return value.toFixed(1) + '%';
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: textColor
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Espaço Livre: ${context.raw.toFixed(2)}%`;
-                            }
-                        }
-                    }
-                }
-            };
+            if (username === CONFIG.ADMIN_USER && password === CONFIG.ADMIN_PASSWORD) {
+                state.isAdmin = true;
+                elements.adminPanel.classList.remove('hidden');
+                elements.loginModal.style.display = 'none';
+                elements.loginError.classList.add('hidden');
+                elements.adminLoginBtn.innerHTML = '<span>🚪</span> Sair';
+                elements.username.value = '';
+                elements.password.value = '';
+                
+                updateCapacityDisplay();
+                updateDataTable();
+                
+                utils.showAlert('success', 'Bem-vindo!', 'Modo administrativo ativado');
+            } else {
+                elements.loginError.classList.remove('hidden');
+            }
         }
 
-        function getPieChartOptions(diskUsage) {
-            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+        function logout() {
+            state.isAdmin = false;
+            elements.adminPanel.classList.add('hidden');
+            elements.adminLoginBtn.innerHTML = '<span>🔐</span> Acesso Administrativo';
             
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: textColor
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                return `${label}: ${value.toFixed(2)}% (${label === 'Usado' ? diskUsage.usedGB.toFixed(2) : diskUsage.freeGB.toFixed(2)} GB)`;
-                            }
-                        }
-                    }
-                }
-            };
+            updateCapacityDisplay();
+            
+            utils.showAlert('info', 'Logout', 'Modo administrativo desativado');
+        }
+
+        // ============================================
+        // FUNÇÕES DE TEMA
+        // ============================================
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            
+            if (state.isDarkMode) {
+                document.body.classList.add('dark-mode');
+                elements.themeIcon.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                elements.themeIcon.textContent = '🌙';
+            }
+            
+            // Atualizar gráficos
+            Object.values(state.charts).forEach(chart => {
+                if (chart) chart.update();
+            });
         }
 
         // ============================================
         // EVENT LISTENERS
         // ============================================
         function setupEventListeners() {
+            // Tema
             elements.themeToggle.addEventListener('click', toggleTheme);
             
+            // Login/Logout
             elements.adminLoginBtn.addEventListener('click', () => {
                 if (state.isAdmin) {
                     logout();
                 } else {
-                    elements.loginModal.style.display = "flex";
+                    elements.loginModal.style.display = 'flex';
                 }
             });
             
             elements.closeLoginModal.addEventListener('click', () => {
-                elements.loginModal.style.display = "none";
-                elements.loginError.classList.add("hidden");
+                elements.loginModal.style.display = 'none';
+                elements.loginError.classList.add('hidden');
                 elements.username.value = '';
                 elements.password.value = '';
             });
@@ -2598,41 +2907,30 @@
                 if (e.key === 'Enter') login();
             });
             
+            // Capacidade do disco
             elements.updateCapacityBtn.addEventListener('click', updateDiskCapacity);
             
             elements.capacityInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') updateDiskCapacity();
             });
             
-            elements.projectionChartBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    elements.projectionChartBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    state.projectionChartRange = parseInt(this.dataset.range);
-                    updateProjectionChart();
-                });
-            });
-            
+            // Ações administrativas
             elements.addRecordBtn.addEventListener('click', () => openEditModal());
             elements.exportBtn.addEventListener('click', exportToJSON);
             elements.importBtn.addEventListener('click', () => elements.importFile.click());
             elements.importFile.addEventListener('change', importFromJSON);
             elements.loadSampleBtn.addEventListener('click', loadSampleData);
-            elements.clearAllDataBtn.addEventListener('click', clearAllData);
             
-            elements.syncNowBtn.addEventListener('click', () => {
-                setupFirebaseListener();
-                alert("Sincronização manual iniciada!");
-            });
-            
+            // Modal de edição
             elements.closeEditModal.addEventListener('click', () => {
-                elements.editModal.style.display = "none";
+                elements.editModal.style.display = 'none';
             });
             
             elements.cancelBtn.addEventListener('click', () => {
-                elements.editModal.style.display = "none";
+                elements.editModal.style.display = 'none';
             });
             
+            // Formulário
             elements.dataForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
@@ -2643,52 +2941,49 @@
                 const timestamp = utils.parseDate(date, time).toISOString();
                 
                 const record = {
-                    id: state.editingId || utils.generateId(),
                     timestamp: timestamp,
-                    cpu: parseFloat(elements.inputCpu.value),
-                    processos: parseInt(elements.inputProcesses.value),
-                    ramLivre: parseFloat(elements.inputRam.value),
-                    swapLivre: parseFloat(elements.inputSwap.value),
                     discoLivre: parseFloat(elements.inputDisk.value),
+                    cpu: parseFloat(elements.inputCpu.value),
+                    ramLivre: parseFloat(elements.inputRam.value),
                     observacoes: elements.inputObservations.value
                 };
                 
                 saveData(record);
-                elements.editModal.style.display = "none";
+                elements.editModal.style.display = 'none';
             });
             
+            // Fechar modais clicando fora
             window.addEventListener('click', (e) => {
                 if (e.target === elements.loginModal) {
-                    elements.loginModal.style.display = "none";
-                    elements.loginError.classList.add("hidden");
+                    elements.loginModal.style.display = 'none';
+                    elements.loginError.classList.add('hidden');
                     elements.username.value = '';
                     elements.password.value = '';
                 }
                 if (e.target === elements.editModal) {
-                    elements.editModal.style.display = "none";
+                    elements.editModal.style.display = 'none';
                 }
             });
         }
 
         // ============================================
-        // INICIALIZAÇÃO DA APLICAÇÃO
+        // INICIALIZAÇÃO
         // ============================================
         async function init() {
-            console.log("🚀 Inicializando sistema de monitoramento e-SUS...");
+            console.log('🚀 Inicializando sistema de monitoramento completo...');
             
             initializeMasks();
             setupEventListeners();
             
-            elements.storageInfo.textContent = "Firebase Cloud";
-            
-            // Configurar acesso inicial ao formulário de capacidade
-            updateCapacityFormAccess();
-            
             await initializeFirebase();
             await setupFirebaseListener();
             
-            console.log("✅ Sistema inicializado com sucesso!");
-            console.log("📊 Aguardando dados do Firebase...");
+            console.log('✅ Sistema inicializado');
+            console.log(`📊 Capacidade atual: ${state.diskCapacity} GB`);
+            
+            // Mostrar alerta inicial
+            utils.showAlert('info', 'Sistema Iniciado', 
+                `Monitoramento completo ativo: Disco D: (${state.diskCapacity} GB), CPU, RAM`);
         }
 
         document.addEventListener('DOMContentLoaded', init);
