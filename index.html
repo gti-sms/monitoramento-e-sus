@@ -142,6 +142,13 @@
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         /* Cards de métricas */
         .metrics-grid {
             display: grid;
@@ -346,6 +353,12 @@
             font-size: 1rem;
         }
 
+        .form-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
         .form-input:focus {
             outline: none;
             border-color: var(--primary-color);
@@ -444,6 +457,12 @@
             border-radius: 6px;
             background-color: var(--bg-color);
             color: var(--text-color);
+        }
+
+        .capacity-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: rgba(0, 0, 0, 0.05);
         }
 
         /* Alertas */
@@ -677,6 +696,11 @@
         .warning { color: var(--warning-color); }
         .attention { color: #f39c12; }
         .normal { color: var(--secondary-color); }
+        
+        /* Adicionando espaçamento para input com 2 casas decimais */
+        .two-decimals {
+            font-family: 'Courier New', monospace;
+        }
     </style>
 </head>
 <body>
@@ -697,18 +721,19 @@
             </div>
         </header>
 
-        <!-- REMOVIDO: Status do Firebase para limpeza da tela -->
-
-        <!-- Configuração de capacidade do disco -->
+        <!-- Configuração de capacidade do disco (VISÍVEL PARA TODOS) -->
         <div id="capacityConfig" class="capacity-config">
             <div class="capacity-info">
                 <div class="capacity-label">Capacidade Total do Disco D:</div>
                 <div class="capacity-value" id="currentCapacity">3000 GB</div>
+                <div id="capacityStatus" style="font-size:0.8rem; margin-top:5px;">
+                    <span id="capacityMessage">🔒 Apenas administradores podem alterar</span>
+                </div>
             </div>
             <div class="capacity-form">
-                <input type="number" id="capacityInput" class="capacity-input" placeholder="Nova capacidade (GB)" min="1" max="10000">
-                <button id="updateCapacityBtn" class="btn btn-secondary">
-                    <span>🔄</span> Atualizar
+                <input type="number" id="capacityInput" class="capacity-input" placeholder="Faça login para alterar" min="1" max="10000" disabled>
+                <button id="updateCapacityBtn" class="btn btn-secondary" disabled>
+                    <span>🔒</span> Atualizar
                 </button>
             </div>
         </div>
@@ -764,7 +789,7 @@
                     <div class="metric-title">Disco D: Livre (%)</div>
                     <div class="metric-icon">💿</div>
                 </div>
-                <div class="metric-value" id="diskValue">0.0%</div>
+                <div class="metric-value two-decimals" id="diskValue">0.00%</div>
                 <div class="metric-trend trend-down">
                     <span>↘️</span> <span>Carregando...</span>
                 </div>
@@ -965,7 +990,8 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="inputDisk">Espaço Livre em Disco D (%)</label>
-                        <input type="number" step="0.1" id="inputDisk" class="form-input" placeholder="Ex: 38.0" min="0" max="100" required>
+                        <input type="number" step="0.01" id="inputDisk" class="form-input two-decimals" 
+                               placeholder="Ex: 90.00" min="0" max="100" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="inputObservations">Observações (opcional)</label>
@@ -1016,6 +1042,8 @@
             },
             DEFAULT_DISK_CAPACITY: 3000,
             COLLECTION_NAME: "monitoramento",
+            CONFIG_COLLECTION: "config",
+            CONFIG_DISK_CAPACITY_DOC: "disk_capacity",
             CRITICAL_FREE_SPACE: 5,
             WARNING_FREE_SPACE: 20
         };
@@ -1058,6 +1086,7 @@
             currentCapacity: document.getElementById('currentCapacity'),
             capacityInput: document.getElementById('capacityInput'),
             updateCapacityBtn: document.getElementById('updateCapacityBtn'),
+            capacityMessage: document.getElementById('capacityMessage'),
             obsCapacity: document.getElementById('obsCapacity'),
             obsGrowthRate: document.getElementById('obsGrowthRate'),
             storageInfo: document.getElementById('storageInfo'),
@@ -1173,8 +1202,8 @@
                 return {
                     usedGB,
                     freeGB,
-                    usedPercent: parseFloat(usedPercent.toFixed(1)),
-                    freePercent: parseFloat(freePercent.toFixed(1))
+                    usedPercent: parseFloat(usedPercent.toFixed(2)),
+                    freePercent: parseFloat(freePercent.toFixed(2))
                 };
             },
             
@@ -1206,11 +1235,20 @@
             
             showNotification: (message, type = 'success') => {
                 console.log(`[${type.toUpperCase()}] ${message}`);
+            },
+            
+            formatTwoDecimals: (number) => {
+                return parseFloat(number).toFixed(2);
+            },
+            
+            validateTwoDecimals: (numberStr) => {
+                const regex = /^\d+(\.\d{1,2})?$/;
+                return regex.test(numberStr);
             }
         };
 
         // ============================================
-        // FUNÇÕES DO FIREBASE
+        // FUNÇÕES DO FIREBASE - ATUALIZADAS
         // ============================================
         async function initializeFirebase() {
             try {
@@ -1220,11 +1258,55 @@
                     state.firebaseInitialized = true;
                     
                     console.log("✅ Firebase inicializado com sucesso");
+                    
+                    // Carregar capacidade do disco do Firebase
+                    await loadDiskCapacityFromFirebase();
+                    
                     return true;
                 }
                 return true;
             } catch (error) {
                 console.error("❌ Erro ao inicializar Firebase:", error);
+                return false;
+            }
+        }
+
+        async function loadDiskCapacityFromFirebase() {
+            try {
+                const doc = await firestore.collection(CONFIG.CONFIG_COLLECTION).doc(CONFIG.CONFIG_DISK_CAPACITY_DOC).get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    state.diskCapacity = data.capacity;
+                    console.log(`📊 Capacidade carregada do Firebase: ${state.diskCapacity} GB`);
+                } else {
+                    // Se não existir, usar padrão e criar no Firebase
+                    state.diskCapacity = CONFIG.DEFAULT_DISK_CAPACITY;
+                    await saveDiskCapacityToFirebase();
+                    console.log(`📊 Capacidade padrão criada: ${state.diskCapacity} GB`);
+                }
+                
+                updateCapacityDisplay();
+                
+            } catch (error) {
+                console.error("❌ Erro ao carregar capacidade do disco:", error);
+                state.diskCapacity = CONFIG.DEFAULT_DISK_CAPACITY;
+                updateCapacityDisplay();
+            }
+        }
+
+        async function saveDiskCapacityToFirebase() {
+            try {
+                await firestore.collection(CONFIG.CONFIG_COLLECTION).doc(CONFIG.CONFIG_DISK_CAPACITY_DOC).set({
+                    capacity: state.diskCapacity,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: state.isAdmin ? CONFIG.ADMIN_USER : 'system'
+                }, { merge: true });
+                
+                console.log(`✅ Capacidade salva no Firebase: ${state.diskCapacity} GB`);
+                return true;
+            } catch (error) {
+                console.error("❌ Erro ao salvar capacidade no Firebase:", error);
                 return false;
             }
         }
@@ -1304,6 +1386,9 @@
             }
             
             try {
+                // Garantir que discoLivre tenha 2 casas decimais
+                record.discoLivre = parseFloat(record.discoLivre.toFixed(2));
+                
                 if (state.editingId) {
                     await firestore.collection(CONFIG.COLLECTION_NAME).doc(state.editingId).update({
                         timestamp: record.timestamp,
@@ -1336,6 +1421,68 @@
             } catch (error) {
                 console.error("❌ Erro ao salvar dados no Firebase:", error);
                 alert("Erro ao salvar no Firebase: " + error.message);
+            }
+        }
+
+        async function updateDiskCapacity() {
+            // Verificar se o usuário é admin
+            if (!state.isAdmin) {
+                alert("❌ Apenas administradores podem alterar a capacidade do disco.");
+                return;
+            }
+            
+            const newCapacity = parseInt(elements.capacityInput.value);
+            
+            if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 10000) {
+                alert("Por favor, insira uma capacidade válida entre 1 e 10000 GB.");
+                return;
+            }
+            
+            state.diskCapacity = newCapacity;
+            
+            // Salvar no Firebase
+            const saved = await saveDiskCapacityToFirebase();
+            
+            if (saved) {
+                updateCapacityDisplay();
+                updateUI();
+                elements.capacityInput.value = "";
+                
+                alert(`✅ Capacidade do disco D: atualizada para ${newCapacity} GB.`);
+            } else {
+                alert("❌ Erro ao salvar a capacidade no Firebase.");
+            }
+        }
+
+        function updateCapacityDisplay() {
+            elements.currentCapacity.textContent = `${state.diskCapacity} GB`;
+            elements.obsCapacity.textContent = state.diskCapacity;
+        }
+
+        // ============================================
+        // CONTROLE DE ACESSO À CAPACIDADE DO DISCO
+        // ============================================
+        function updateCapacityFormAccess() {
+            if (state.isAdmin) {
+                // Habilitar entrada e botão
+                elements.capacityInput.disabled = false;
+                elements.capacityInput.placeholder = "Nova capacidade (GB)";
+                elements.updateCapacityBtn.disabled = false;
+                elements.updateCapacityBtn.innerHTML = '<span>🔄</span> Atualizar';
+                
+                // Atualizar mensagem
+                elements.capacityMessage.innerHTML = '✅ Modo administrativo ativo - Você pode alterar a capacidade';
+                elements.capacityMessage.style.color = '#2ecc71';
+            } else {
+                // Desabilitar entrada e botão
+                elements.capacityInput.disabled = true;
+                elements.capacityInput.placeholder = "Faça login para alterar";
+                elements.updateCapacityBtn.disabled = true;
+                elements.updateCapacityBtn.innerHTML = '<span>🔒</span> Atualizar';
+                
+                // Atualizar mensagem
+                elements.capacityMessage.innerHTML = '🔒 Apenas administradores podem alterar esta configuração';
+                elements.capacityMessage.style.color = '';
             }
         }
 
@@ -1409,11 +1556,10 @@
             const avgDailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
             
             // 4. Definir 3 cenários baseados na variação histórica
-            // MODIFICAÇÃO: Otimista -5%, Pessimista +5% (ajuste de ±5%)
             const scenarios = [
                 { 
                     name: 'Pessimista', 
-                    factor: 1.05,  // +5%
+                    factor: 1.05,
                     color: '#e74c3c',
                     description: 'Consumo 5% acima da média',
                     dailyConsumption: avgDailyConsumptionGB * 1.05
@@ -1427,7 +1573,7 @@
                 },
                 { 
                     name: 'Otimista', 
-                    factor: 0.95,  // -5%
+                    factor: 0.95,
                     color: '#2ecc71',
                     description: 'Consumo 5% abaixo da média',
                     dailyConsumption: avgDailyConsumptionGB * 0.95
@@ -1523,24 +1669,24 @@
                                 <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
                                     <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Livre</div>
                                     <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedFreePercent < 10 ? '#e74c3c' : projectedFreePercent < 20 ? '#f39c12' : '#2ecc71'}">
-                                        ${projectedFreePercent.toFixed(1)}%
+                                        ${projectedFreePercent.toFixed(2)}%
                                     </div>
-                                    <div style="font-size: 0.9rem;">${projectedFreeGB.toFixed(1)} GB</div>
+                                    <div style="font-size: 0.9rem;">${projectedFreeGB.toFixed(2)} GB</div>
                                 </div>
                                 
                                 <div style="padding: 10px; background: white; border-radius: 6px; text-align: center;">
                                     <div style="font-size: 0.85rem; color: var(--text-secondary);">Espaço Usado</div>
                                     <div style="font-size: 1.5rem; font-weight: bold; color: ${projectedUsedPercent > 90 ? '#e74c3c' : projectedUsedPercent > 80 ? '#f39c12' : '#3498db'}">
-                                        ${projectedUsedPercent.toFixed(1)}%
+                                        ${projectedUsedPercent.toFixed(2)}%
                                     </div>
-                                    <div style="font-size: 0.9rem;">${projectedUsedGB.toFixed(1)} GB</div>
+                                    <div style="font-size: 0.9rem;">${projectedUsedGB.toFixed(2)} GB</div>
                                 </div>
                             </div>
                             
                             <div style="font-size: 0.9rem; color: var(--text-secondary);">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                                     <span>Consumo no período:</span>
-                                    <strong>${totalConsumption.toFixed(1)} GB</strong>
+                                    <strong>${totalConsumption.toFixed(2)} GB</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                                     <span>Status:</span>
@@ -1573,7 +1719,7 @@
                     
                     <div style="padding: 12px; background: var(--bg-color); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
                         <strong>📝 FÓRMULA APLICADA (Baseada em dados reais):</strong><br>
-                        Espaço Livre Futuro = Espaço Atual (${currentFreeGB.toFixed(1)} GB) - (Consumo Diário Médio × ${period.days} dias)<br>
+                        Espaço Livre Futuro = Espaço Atual (${currentFreeGB.toFixed(2)} GB) - (Consumo Diário Médio × ${period.days} dias)<br>
                         Baseado em ${consumptionSamples.length} amostras históricas com consumo médio de ${avgDailyConsumptionGB.toFixed(2)} GB/dia
                     </div>
                 `;
@@ -1683,7 +1829,7 @@
                 elements.processesValue.textContent = latest.processos;
                 elements.ramValue.textContent = `${latest.ramLivre.toFixed(1)} GB`;
                 elements.swapValue.textContent = `${latest.swapLivre.toFixed(1)} GB`;
-                elements.diskValue.textContent = `${latest.discoLivre.toFixed(1)}%`;
+                elements.diskValue.textContent = `${latest.discoLivre.toFixed(2)}%`;
                 elements.lastUpdate.textContent = `${utils.formatDate(latest.timestamp)} ${utils.formatTime(latest.timestamp)}`;
             }
             
@@ -1712,7 +1858,7 @@
                     <td>${record.processos}</td>
                     <td>${record.ramLivre.toFixed(1)} GB</td>
                     <td>${record.swapLivre.toFixed(1)} GB</td>
-                    <td>${record.discoLivre.toFixed(1)}%</td>
+                    <td class="two-decimals">${record.discoLivre.toFixed(2)}%</td>
                     <td>${record.observacoes || ""}</td>
                     <td>
                         <div class="action-buttons">
@@ -1778,7 +1924,7 @@
             if (sortedData.length === 0) return;
             
             const labels = sortedData.map(record => utils.formatDate(record.timestamp));
-            const diskPercentData = sortedData.map(record => parseFloat(record.discoLivre.toFixed(1)));
+            const diskPercentData = sortedData.map(record => parseFloat(record.discoLivre.toFixed(2)));
             
             const lineCtx = document.getElementById('lineChart').getContext('2d');
             if (lineChart) lineChart.destroy();
@@ -1869,7 +2015,7 @@
             
             // Preparar dados para o gráfico
             const labels = filteredData.map(record => utils.formatDate(record.timestamp));
-            const diskPercentData = filteredData.map(record => parseFloat(record.discoLivre.toFixed(1)));
+            const diskPercentData = filteredData.map(record => parseFloat(record.discoLivre.toFixed(2)));
             
             // Configurações do gráfico baseadas no tema
             const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
@@ -1921,7 +2067,7 @@
                             ticks: {
                                 color: textColor,
                                 callback: function(value) {
-                                    return value + '%';
+                                    return value.toFixed(1) + '%';
                                 }
                             }
                         }
@@ -1935,7 +2081,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `Espaço Livre: ${context.raw}%`;
+                                    return `Espaço Livre: ${context.raw.toFixed(2)}%`;
                                 }
                             }
                         }
@@ -1947,29 +2093,6 @@
         // ============================================
         // FUNÇÕES AUXILIARES
         // ============================================
-        function updateDiskCapacity() {
-            const newCapacity = parseInt(elements.capacityInput.value);
-            
-            if (isNaN(newCapacity) || newCapacity < 1 || newCapacity > 10000) {
-                alert("Por favor, insira uma capacidade válida entre 1 e 10000 GB.");
-                return;
-            }
-            
-            state.diskCapacity = newCapacity;
-            localStorage.setItem('esus_disk_capacity', newCapacity.toString());
-            
-            updateCapacityDisplay();
-            updateUI();
-            elements.capacityInput.value = "";
-            
-            alert(`✅ Capacidade do disco D: atualizada para ${newCapacity} GB.`);
-        }
-
-        function updateCapacityDisplay() {
-            elements.currentCapacity.textContent = `${state.diskCapacity} GB`;
-            elements.obsCapacity.textContent = state.diskCapacity;
-        }
-
         function openEditModal(record = null) {
             if (record) {
                 elements.editModalTitle.textContent = "✏️ Editar Registro";
@@ -1981,7 +2104,7 @@
                 elements.inputProcesses.value = record.processos;
                 elements.inputRam.value = record.ramLivre;
                 elements.inputSwap.value = record.swapLivre;
-                elements.inputDisk.value = record.discoLivre.toFixed(1);
+                elements.inputDisk.value = record.discoLivre.toFixed(2);
                 elements.inputObservations.value = record.observacoes || "";
             } else {
                 elements.editModalTitle.textContent = "➕ Adicionar Registro";
@@ -2078,6 +2201,9 @@
                                     discoLivre = utils.gbToPercent(discoLivre);
                                 }
                                 
+                                // Garantir 2 casas decimais
+                                discoLivre = parseFloat(discoLivre.toFixed(2));
+                                
                                 await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
                                     timestamp: item.timestamp,
                                     cpu: item.cpu,
@@ -2095,7 +2221,7 @@
                         
                         if (importedData.config && importedData.config.diskCapacity) {
                             state.diskCapacity = importedData.config.diskCapacity;
-                            localStorage.setItem('esus_disk_capacity', state.diskCapacity.toString());
+                            await saveDiskCapacityToFirebase();
                             updateCapacityDisplay();
                         }
                         
@@ -2194,7 +2320,7 @@
                         processos: record.processos,
                         ramLivre: record.ramLivre,
                         swapLivre: record.swapLivre,
-                        discoLivre: record.discoLivre,
+                        discoLivre: parseFloat(record.discoLivre.toFixed(2)),
                         observacoes: record.observacoes || ""
                     });
                     successCount++;
@@ -2237,9 +2363,16 @@
                 elements.loginModal.style.display = "none";
                 elements.loginError.classList.add("hidden");
                 elements.adminLoginBtn.innerHTML = '<span>🚪</span> Sair';
+                elements.username.value = '';
+                elements.password.value = '';
+                
+                // Habilitar o formulário de capacidade
+                updateCapacityFormAccess();
                 
                 updateDataTable();
                 updateFirebaseStats();
+                
+                utils.showNotification("Login administrativo realizado com sucesso!");
             } else {
                 elements.loginError.classList.remove("hidden");
             }
@@ -2249,6 +2382,11 @@
             state.isAdmin = false;
             elements.adminPanel.classList.add("hidden");
             elements.adminLoginBtn.innerHTML = '<span>🔐</span> Acesso Administrativo';
+            
+            // Desabilitar o formulário de capacidade
+            updateCapacityFormAccess();
+            
+            utils.showNotification("Logout realizado com sucesso!");
         }
 
         // ============================================
@@ -2273,6 +2411,24 @@
                 
                 if (value.length > 2) {
                     value = value.substring(0, 2) + ':' + value.substring(2, 4);
+                }
+                
+                e.target.value = value;
+            });
+            
+            // Validação para aceitar 2 casas decimais no disco
+            elements.inputDisk.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d.]/g, '');
+                
+                // Garantir que não tenha mais de um ponto decimal
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                // Limitar a 2 casas decimais
+                if (parts.length === 2 && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
                 }
                 
                 e.target.value = value;
@@ -2319,7 +2475,15 @@
             }
             
             if (isNaN(disk) || disk < 0 || disk > 100) {
-                alert("Disco livre deve ser um valor entre 0 e 100%.");
+                alert("Disco livre deve ser um valor entre 0.00 e 100.00%.");
+                return false;
+            }
+            
+            // Validar que tem no máximo 2 casas decimais
+            const diskStr = elements.inputDisk.value.toString();
+            const decimalParts = diskStr.split('.');
+            if (decimalParts.length === 2 && decimalParts[1].length > 2) {
+                alert("Disco livre deve ter no máximo 2 casas decimais.");
                 return false;
             }
             
@@ -2330,13 +2494,19 @@
         // FUNÇÕES AUXILIARES DE GRÁFICOS
         // ============================================
         function getLineChartOptions() {
+            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+            const gridColor = state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            
             return {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     x: {
                         grid: {
-                            color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
                         }
                     },
                     y: {
@@ -2344,17 +2514,31 @@
                         max: 100,
                         title: {
                             display: true,
-                            text: 'Espaço Livre (%)'
+                            text: 'Espaço Livre (%)',
+                            color: textColor
                         },
                         grid: {
-                            color: state.isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return value.toFixed(1) + '%';
+                            }
                         }
                     }
                 },
                 plugins: {
                     legend: {
                         labels: {
-                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                            color: textColor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Espaço Livre: ${context.raw.toFixed(2)}%`;
+                            }
                         }
                     }
                 }
@@ -2362,6 +2546,8 @@
         }
 
         function getPieChartOptions(diskUsage) {
+            const textColor = state.isDarkMode ? '#ecf0f1' : '#2c3e50';
+            
             return {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -2369,7 +2555,7 @@
                     legend: {
                         position: 'top',
                         labels: {
-                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                            color: textColor
                         }
                     },
                     tooltip: {
@@ -2377,7 +2563,7 @@
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
-                                return `${label}: ${value}% (${label === 'Usado' ? diskUsage.usedGB.toFixed(1) : diskUsage.freeGB.toFixed(1)} GB)`;
+                                return `${label}: ${value.toFixed(2)}% (${label === 'Usado' ? diskUsage.usedGB.toFixed(2) : diskUsage.freeGB.toFixed(2)} GB)`;
                             }
                         }
                     }
@@ -2402,6 +2588,8 @@
             elements.closeLoginModal.addEventListener('click', () => {
                 elements.loginModal.style.display = "none";
                 elements.loginError.classList.add("hidden");
+                elements.username.value = '';
+                elements.password.value = '';
             });
             
             elements.loginBtn.addEventListener('click', login);
@@ -2473,6 +2661,8 @@
                 if (e.target === elements.loginModal) {
                     elements.loginModal.style.display = "none";
                     elements.loginError.classList.add("hidden");
+                    elements.username.value = '';
+                    elements.password.value = '';
                 }
                 if (e.target === elements.editModal) {
                     elements.editModal.style.display = "none";
@@ -2489,13 +2679,10 @@
             initializeMasks();
             setupEventListeners();
             
-            const savedCapacity = localStorage.getItem('esus_disk_capacity');
-            if (savedCapacity) {
-                state.diskCapacity = parseInt(savedCapacity);
-                updateCapacityDisplay();
-            }
-            
             elements.storageInfo.textContent = "Firebase Cloud";
+            
+            // Configurar acesso inicial ao formulário de capacidade
+            updateCapacityFormAccess();
             
             await initializeFirebase();
             await setupFirebaseListener();
