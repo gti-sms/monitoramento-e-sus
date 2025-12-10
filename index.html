@@ -633,6 +633,10 @@
         .two-decimals {
             font-family: 'Courier New', monospace;
         }
+        
+        .projection-base {
+            border-left: 5px solid #9b59b6 !important;
+        }
     </style>
 </head>
 <body>
@@ -773,6 +777,9 @@
 
         <!-- Projeções -->
         <h2 class="card-title mb-20">📅 Projeções Baseadas no Consumo Atual</h2>
+        <div class="capacity-info mb-20">
+            <strong>⚠️ IMPORTANTE:</strong> Projeções consideram <strong>39.962 GB</strong> como espaço usado inicial fixo
+        </div>
         <div class="projection-cards" id="projectionCards">
             <!-- Projeções serão inseridas via JavaScript -->
         </div>
@@ -825,7 +832,7 @@
                         <li>A <strong>capacidade configurada acima</strong> é a referência para todos os cálculos</li>
                         <li>Os registros mantêm a <strong>capacidade da época</strong> em que foram coletados</li>
                         <li>As porcentagens são <strong>recalculadas automaticamente</strong> para a capacidade atual</li>
-                        <li>Projeções baseadas no <strong>consumo real em GB</strong></li>
+                        <li>Projeções baseadas no <strong>consumo real em GB</strong> com valor fixo de 39.962 GB usado inicial</li>
                     </ul>
                 </div>
                 <div>
@@ -834,6 +841,7 @@
                         <li><strong>Servidor:</strong> Servidor de Anexos - Produção</li>
                         <li><strong>Disco:</strong> D: (Armazenamento de arquivos)</li>
                         <li><strong>Capacidade atual:</strong> <span id="infoCapacity">3000</span> GB</li>
+                        <li><strong>Base projeções:</strong> 39.962 GB usado inicial</li>
                         <li><strong>Total registros:</strong> <span id="infoRecords">0</span></li>
                         <li><strong>Armazenamento:</strong> Firebase Cloud</li>
                     </ul>
@@ -914,7 +922,7 @@
         <!-- Footer -->
         <footer>
             <p>Sistema de Monitoramento de Disco D: | Desenvolvido para GTI</p>
-            <p style="font-size:0.9rem; margin-top:5px;">Capacidade atual: <strong id="footerCapacity">3000 GB</strong></p>
+            <p style="font-size:0.9rem; margin-top:5px;">Capacidade atual: <strong id="footerCapacity">3000 GB</strong> | Base projeções: <strong>39.962 GB usado inicial</strong></p>
         </footer>
     </div>
 
@@ -935,6 +943,8 @@
                 measurementId: "G-WECBVPST4T"
             },
             DEFAULT_DISK_CAPACITY: 3000,
+            // VALOR FIXO DE ESPAÇO USADO PARA PROJEÇÕES
+            FIXED_USED_GB_FOR_PROJECTIONS: 39.962,
             COLLECTION_NAME: "monitoramento_disco",
             CONFIG_COLLECTION: "config_disco",
             CONFIG_DISK_CAPACITY_DOC: "disk_capacity",
@@ -1118,6 +1128,11 @@
                     usedGB: parseFloat(usedGB.toFixed(2)),
                     capacity: currentCapacity
                 };
+            },
+            
+            // Calcular espaço livre baseado no valor FIXO de espaço usado
+            calculateFreeGBFromFixedUsed: (capacity, fixedUsedGB) => {
+                return capacity - fixedUsedGB;
             },
             
             generateId: () => {
@@ -1475,11 +1490,20 @@
             if (dailyConsumptionGB > 0) {
                 elements.trendIcon.textContent = "📈";
                 elements.trendText.textContent = `${dailyConsumptionGB.toFixed(2)} GB/dia`;
-                elements.trendExplanation.textContent = `Baseado em ${sortedData.length} registros históricos`;
                 
-                // Calcular dias restantes
-                const currentFreeGB = utils.calculateCurrentUsage(sortedData[sortedData.length - 1].discoLivre, state.diskCapacity).freeGB;
-                const daysRemaining = Math.floor(currentFreeGB / dailyConsumptionGB);
+                // Atualizar explicação para incluir informação sobre o valor fixo
+                const initialFreeGB = utils.calculateFreeGBFromFixedUsed(state.diskCapacity, CONFIG.FIXED_USED_GB_FOR_PROJECTIONS);
+                const initialFreePercent = (initialFreeGB / state.diskCapacity) * 100;
+                
+                elements.trendExplanation.innerHTML = `
+                    Baseado em ${sortedData.length} registros históricos<br>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
+                        Projeções usam ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS.toFixed(2)} GB como base inicial
+                    </small>
+                `;
+                
+                // Calcular dias restantes baseado no espaço LIVRE inicial (do valor fixo)
+                const daysRemaining = Math.floor(initialFreeGB / dailyConsumptionGB);
                 elements.daysRemaining.textContent = daysRemaining;
                 
                 // Atualizar status
@@ -1688,8 +1712,8 @@
             
             // Calcular consumo diário médio
             const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            const latestUsage = utils.calculateCurrentUsage(sortedData[sortedData.length - 1].discoLivre, state.diskCapacity);
             
+            // Calcular tendência de consumo
             let totalConsumptionGB = 0;
             let totalDays = 0;
             
@@ -1697,6 +1721,7 @@
                 const current = utils.calculateCurrentUsage(sortedData[i].discoLivre, state.diskCapacity);
                 const next = utils.calculateCurrentUsage(sortedData[i + 1].discoLivre, state.diskCapacity);
                 
+                // Só considerar se houve consumo (espaço livre diminuiu)
                 if (next.freeGB < current.freeGB) {
                     const consumptionGB = current.freeGB - next.freeGB;
                     const days = (new Date(sortedData[i + 1].timestamp) - new Date(sortedData[i].timestamp)) / (1000 * 60 * 60 * 24);
@@ -1713,10 +1738,33 @@
             // Gerar projeções
             let projectionsHTML = '';
             
+            // Calcular espaço livre inicial baseado no valor FIXO de espaço usado
+            const initialFreeGB = utils.calculateFreeGBFromFixedUsed(state.diskCapacity, CONFIG.FIXED_USED_GB_FOR_PROJECTIONS);
+            const initialFreePercent = (initialFreeGB / state.diskCapacity) * 100;
+            
+            // Adicionar card informativo sobre o valor fixo
+            projectionsHTML += `
+                <div class="projection-card projection-base">
+                    <div class="projection-title">⚙️ Base para Projeções</div>
+                    <div class="projection-date">Valor Fixo de Referência</div>
+                    <div class="projection-value" style="color: #9b59b6;">${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS.toFixed(3)} GB</div>
+                    <div style="color: var(--text-secondary); margin: 10px 0;">
+                        Espaço inicial USADO
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                        Espaço livre inicial: ${initialFreeGB.toFixed(2)} GB (${initialFreePercent.toFixed(2)}%)
+                    </div>
+                </div>
+            `;
+            
             CONFIG.PROJECTION_DAYS.forEach(days => {
+                // Projeção baseada no espaço LIVRE inicial (calculado a partir do usado fixo)
                 const consumptionGB = dailyConsumptionGB * days;
-                const projectedFreeGB = Math.max(0, latestUsage.freeGB - consumptionGB);
+                
+                // ESPAÇO LIVRE projetado = ESPAÇO LIVRE inicial - consumo acumulado
+                const projectedFreeGB = Math.max(0, initialFreeGB - consumptionGB);
                 const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
+                const projectedUsedGB = state.diskCapacity - projectedFreeGB;
                 
                 // Calcular data futura
                 const futureDate = new Date();
@@ -1737,10 +1785,12 @@
                         <div class="projection-date">${formattedDate}</div>
                         <div class="projection-value ${statusClass}">${projectedFreePercent.toFixed(2)}%</div>
                         <div style="color: var(--text-secondary); margin: 10px 0;">
-                            ${projectedFreeGB.toFixed(2)} GB livres
+                            ${projectedFreeGB.toFixed(2)} GB livres<br>
+                            ${projectedUsedGB.toFixed(2)} GB usados
                         </div>
                         <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                            Consumo estimado: ${consumptionGB.toFixed(2)} GB
+                            Consumo estimado: ${consumptionGB.toFixed(2)} GB<br>
+                            Total usado: ${(CONFIG.FIXED_USED_GB_FOR_PROJECTIONS + consumptionGB).toFixed(2)} GB
                         </div>
                     </div>
                 `;
@@ -1876,6 +1926,7 @@
                 data: state.data,
                 config: {
                     currentCapacity: state.diskCapacity,
+                    fixedUsedForProjections: CONFIG.FIXED_USED_GB_FOR_PROJECTIONS,
                     exportDate: new Date().toISOString(),
                     totalRecords: state.data.length
                 }
@@ -2157,6 +2208,7 @@
         // ============================================
         async function init() {
             console.log('🚀 Inicializando sistema de monitoramento...');
+            console.log(`⚙️ Configuração: Projeções baseadas em ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS} GB usado inicial`);
             
             initializeMasks();
             setupEventListeners();
@@ -2169,7 +2221,8 @@
             
             // Mostrar alerta inicial
             utils.showAlert('info', 'Sistema Iniciado', 
-                `Monitoramento do disco D: configurado para ${state.diskCapacity} GB`);
+                `Monitoramento do disco D: configurado para ${state.diskCapacity} GB. ` +
+                `Projeções baseadas em ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS} GB usado inicial.`);
         }
 
         document.addEventListener('DOMContentLoaded', init);
