@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento do Disco D: | Servidor</title>
+    <title>Monitoramento do Servidor | Disco + CPU + RAM</title>
     
     <!-- CDN do Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,7 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <style>
-        /* Estilos Gerais Simplificados */
+        /* Estilos Gerais */
         * {
             margin: 0;
             padding: 0;
@@ -32,6 +32,8 @@
             --secondary-color: #2ecc71;
             --warning-color: #f39c12;
             --danger-color: #e74c3c;
+            --cpu-color: #9b59b6;
+            --ram-color: #1abc9c;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
             --gradient: linear-gradient(135deg, #3498db, #2c3e50);
         }
@@ -47,6 +49,8 @@
             --secondary-color: #2ecc71;
             --warning-color: #f39c12;
             --danger-color: #e74c3c;
+            --cpu-color: #9b59b6;
+            --ram-color: #1abc9c;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
@@ -58,7 +62,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -130,6 +134,16 @@
             color: white;
         }
 
+        .btn-cpu {
+            background-color: var(--cpu-color);
+            color: white;
+        }
+
+        .btn-ram {
+            background-color: var(--ram-color);
+            color: white;
+        }
+
         .btn-outline {
             background-color: transparent;
             border: 1px solid var(--primary-color);
@@ -148,7 +162,7 @@
             box-shadow: none;
         }
 
-        /* Configuração de capacidade do disco (VISÍVEL PARA TODOS) */
+        /* Configuração de capacidade do disco */
         .capacity-config {
             background-color: var(--card-bg);
             border-radius: 10px;
@@ -213,12 +227,18 @@
             color: var(--text-secondary);
         }
 
-        /* Cards principais */
+        /* Cards principais - GRID com 3 colunas */
         .main-cards {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 25px;
             margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -232,6 +252,28 @@
             border-radius: 10px;
             padding: 25px;
             box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .main-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Card específicos */
+        .disk-card {
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .cpu-card {
+            border-left: 5px solid var(--cpu-color);
+        }
+
+        .ram-card {
+            border-left: 5px solid var(--ram-color);
+        }
+
+        .trend-card {
+            border-left: 5px solid var(--secondary-color);
         }
 
         .card-title {
@@ -243,33 +285,30 @@
             gap: 10px;
         }
 
-        /* Card de Status */
-        .status-card {
-            border-left: 5px solid var(--primary-color);
-        }
-
-        .status-value {
+        /* Valores principais */
+        .main-value {
             font-size: 3.5rem;
             font-weight: 800;
             margin-bottom: 10px;
             text-align: center;
         }
 
-        .status-label {
+        .main-label {
             font-size: 1.1rem;
             color: var(--text-secondary);
             text-align: center;
             margin-bottom: 15px;
         }
 
-        .status-details {
+        /* Detalhes dentro dos cards */
+        .card-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-top: 20px;
         }
 
-        .status-detail {
+        .detail-item {
             text-align: center;
             padding: 15px;
             background: rgba(0,0,0,0.03);
@@ -288,10 +327,6 @@
         }
 
         /* Card de Tendência */
-        .trend-card {
-            border-left: 5px solid var(--secondary-color);
-        }
-
         .trend-value {
             font-size: 2.5rem;
             font-weight: bold;
@@ -321,12 +356,12 @@
         /* Gráficos */
         .charts-container {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: repeat(2, 1fr);
             gap: 25px;
             margin-bottom: 30px;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
             .charts-container {
                 grid-template-columns: 1fr;
             }
@@ -350,7 +385,7 @@
 
         .chart-container {
             position: relative;
-            height: 350px;
+            height: 300px;
             width: 100%;
         }
 
@@ -441,6 +476,16 @@
         .alert-success {
             background-color: rgba(46, 204, 113, 0.1);
             border-left: 4px solid var(--secondary-color);
+        }
+
+        .alert-cpu {
+            background-color: rgba(155, 89, 182, 0.1);
+            border-left: 4px solid var(--cpu-color);
+        }
+
+        .alert-ram {
+            background-color: rgba(26, 188, 156, 0.1);
+            border-left: 4px solid var(--ram-color);
         }
 
         .alert-icon {
@@ -580,15 +625,16 @@
             margin-bottom: 20px;
         }
 
-        .capacity-highlight {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            background: rgba(52, 152, 219, 0.1);
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin-left: 5px;
+        .two-decimals {
+            font-family: 'Courier New', monospace;
         }
+
+        /* Cores para status */
+        .status-critical { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-good { color: var(--secondary-color); }
+        .status-cpu { color: var(--cpu-color); }
+        .status-ram { color: var(--ram-color); }
 
         /* Responsividade */
         @media (max-width: 768px) {
@@ -607,7 +653,7 @@
                 width: 100%;
             }
             
-            .status-details {
+            .card-details {
                 grid-template-columns: 1fr;
             }
             
@@ -624,19 +670,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Cores para status */
-        .status-critical { color: var(--danger-color); }
-        .status-warning { color: var(--warning-color); }
-        .status-good { color: var(--secondary-color); }
-        
-        .two-decimals {
-            font-family: 'Courier New', monospace;
-        }
-        
-        .projection-base {
-            border-left: 5px solid #9b59b6 !important;
-        }
     </style>
 </head>
 <body>
@@ -644,8 +677,8 @@
         <!-- Header -->
         <header>
             <div class="logo">
-                <div class="logo-icon">💾</div>
-                <h1>Monitoramento do Disco D: | Servidor</h1>
+                <div class="logo-icon">📊</div>
+                <h1>Monitoramento do Servidor | Disco + CPU + RAM</h1>
             </div>
             <div class="header-controls">
                 <button id="themeToggle" class="btn btn-outline">
@@ -666,7 +699,7 @@
                 <div>
                     <div class="capacity-title">Capacidade Atual do Disco D:</div>
                     <div class="capacity-info" id="capacityInfo">
-                        <span id="capacityMessage">Esta é a referência principal para todos os cálculos</span>
+                        <span id="capacityMessage">Referência para cálculos de espaço em disco</span>
                     </div>
                 </div>
                 <div id="adminCapacityControls" class="hidden">
@@ -690,59 +723,111 @@
             </div>
         </div>
 
-        <!-- Cards principais -->
+        <!-- Cards principais - DISCO, CPU, RAM, TENDÊNCIA -->
         <div class="main-cards">
-            <!-- Card de Status -->
-            <div class="main-card status-card">
-                <h2 class="card-title">📊 Status Atual do Disco</h2>
-                <div class="status-value" id="currentFreePercent">0.00%</div>
-                <div class="status-label" id="currentFreeLabel">Espaço Livre</div>
+            <!-- Card do Disco -->
+            <div class="main-card disk-card">
+                <h2 class="card-title">💾 Disco D:</h2>
+                <div class="main-value" id="currentFreePercent">0.00%</div>
+                <div class="main-label" id="currentFreeLabel">Espaço Livre</div>
                 
-                <div class="status-details">
-                    <div class="status-detail">
+                <div class="card-details">
+                    <div class="detail-item">
                         <div class="detail-label">Total do Disco</div>
                         <div class="detail-value" id="totalCapacity">3000 GB</div>
                     </div>
-                    <div class="status-detail">
+                    <div class="detail-item">
                         <div class="detail-label">Livre</div>
                         <div class="detail-value" id="currentFreeGB">0.0 GB</div>
                     </div>
-                    <div class="status-detail">
+                    <div class="detail-item">
                         <div class="detail-label">Usado</div>
                         <div class="detail-value" id="currentUsedGB">0.0 GB</div>
                     </div>
-                    <div class="status-detail">
+                    <div class="detail-item">
                         <div class="detail-label">Última Atualização</div>
                         <div class="detail-value" id="lastUpdateTime">--:--</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Card de Tendência -->
+            <!-- Card da CPU -->
+            <div class="main-card cpu-card">
+                <h2 class="card-title">⚙️ CPU</h2>
+                <div class="main-value" id="currentCpuPercent">0.00%</div>
+                <div class="main-label">Uso da CPU</div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value" id="cpuStatus">NORMAL</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tendência</div>
+                        <div class="detail-value" id="cpuTrend">0.00%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Média</div>
+                        <div class="detail-value" id="cpuAverage">0.00%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Máximo</div>
+                        <div class="detail-value" id="cpuMax">0.00%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card da RAM -->
+            <div class="main-card ram-card">
+                <h2 class="card-title">💽 Memória RAM</h2>
+                <div class="main-value" id="currentRamFree">0.0 GB</div>
+                <div class="main-label">RAM Livre</div>
+                
+                <div class="card-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value" id="ramStatus">NORMAL</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tendência</div>
+                        <div class="detail-value" id="ramTrend">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Média</div>
+                        <div class="detail-value" id="ramAverage">0.0 GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Mínimo</div>
+                        <div class="detail-value" id="ramMin">0.0 GB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card de Tendência (consumo de disco) -->
             <div class="main-card trend-card">
-                <h2 class="card-title">📈 Tendência de Uso</h2>
+                <h2 class="card-title">📈 Tendência de Consumo</h2>
                 <div class="trend-value" id="trendValue">
                     <span id="trendIcon">➡️</span>
                     <span id="trendText">0.00 GB/dia</span>
                 </div>
                 <div class="trend-explanation" id="trendExplanation">
-                    Consumo médio diário baseado em dados históricos
+                    Consumo médio diário do disco
                 </div>
                 
-                <div class="status-details">
-                    <div class="status-detail">
+                <div class="card-details">
+                    <div class="detail-item">
                         <div class="detail-label">Dias Restantes</div>
                         <div class="detail-value" id="daysRemaining">∞</div>
                     </div>
-                    <div class="status-detail">
-                        <div class="detail-label">Status</div>
-                        <div class="detail-value" id="statusText">NORMAL</div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status do Disco</div>
+                        <div class="detail-value" id="diskStatusText">NORMAL</div>
                     </div>
-                    <div class="status-detail">
+                    <div class="detail-item">
                         <div class="detail-label">Registros</div>
                         <div class="detail-value" id="totalRecords">0</div>
                     </div>
-                    <div class="status-detail">
+                    <div class="detail-item">
                         <div class="detail-label">Período</div>
                         <div class="detail-value" id="periodDays">0 dias</div>
                     </div>
@@ -752,34 +837,53 @@
 
         <!-- Gráficos -->
         <div class="charts-container">
-            <!-- Gráfico de linha (histórico) -->
+            <!-- Gráfico do Disco -->
             <div class="chart-card">
-                <h2 class="chart-title">📈 Histórico de Espaço Livre</h2>
+                <h2 class="chart-title">📈 Histórico de Espaço Livre (Disco D:)</h2>
                 <div class="chart-container">
-                    <canvas id="lineChart"></canvas>
+                    <canvas id="diskChart"></canvas>
                 </div>
                 <div class="capacity-info mt-20">
-                    Baseado na capacidade atual: <span class="capacity-highlight" id="chartCapacity">3000 GB</span>
+                    Baseado na capacidade atual: <strong id="chartCapacity">3000 GB</strong>
                 </div>
             </div>
 
-            <!-- Gráfico de pizza (uso atual) -->
+            <!-- Gráfico da CPU -->
             <div class="chart-card">
-                <h2 class="chart-title">🍕 Uso Atual</h2>
+                <h2 class="chart-title">⚙️ Histórico de Uso da CPU</h2>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+                <div class="capacity-info mt-20">
+                    Porcentagem de uso do processador
+                </div>
+            </div>
+
+            <!-- Gráfico da RAM -->
+            <div class="chart-card">
+                <h2 class="chart-title">💽 Histórico de RAM Livre</h2>
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                </div>
+                <div class="capacity-info mt-20">
+                    GB livres de memória RAM
+                </div>
+            </div>
+
+            <!-- Gráfico de Pizza (Uso atual) -->
+            <div class="chart-card">
+                <h2 class="chart-title">🍕 Uso Atual do Disco</h2>
                 <div class="chart-container">
                     <canvas id="pieChart"></canvas>
                 </div>
                 <div class="capacity-info mt-20">
-                    Total configurado: <span class="capacity-highlight" id="pieCapacity">3000 GB</span>
+                    Distribuição atual do espaço em disco
                 </div>
             </div>
         </div>
 
-        <!-- Projeções -->
-        <h2 class="card-title mb-20">📅 Projeções Baseadas no Consumo Atual</h2>
-        <div class="capacity-info mb-20">
-            <strong>⚠️ IMPORTANTE:</strong> Projeções consideram <strong>39.962 GB</strong> como espaço usado inicial fixo
-        </div>
+        <!-- Projeções do Disco -->
+        <h2 class="chart-title mb-20">📅 Projeções de Espaço em Disco</h2>
         <div class="projection-cards" id="projectionCards">
             <!-- Projeções serão inseridas via JavaScript -->
         </div>
@@ -788,7 +892,7 @@
         <div id="adminPanel" class="hidden">
             <div class="data-table-container">
                 <div class="table-header">
-                    <h2 class="card-title">📋 Histórico de Registros</h2>
+                    <h2 class="card-title">📋 Histórico Completo de Registros</h2>
                     <div class="table-controls">
                         <button id="addRecordBtn" class="btn btn-secondary">
                             <span>➕</span> Novo Registro
@@ -799,17 +903,28 @@
                         <button id="importBtn" class="btn btn-outline">
                             <span>📥</span> Importar JSON
                         </button>
+                        <button id="loadSampleBtn" class="btn btn-warning">
+                            <span>🧪</span> Dados de Exemplo
+                        </button>
                     </div>
                 </div>
                 
                 <input type="file" id="importFile" accept=".json" class="hidden">
                 
+                <div class="table-info" style="display: flex; justify-content: space-between; margin-bottom: 15px; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Total de registros: <strong id="tableTotalRecords">0</strong></span>
+                    <span class="last-sync" style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Última atualização: <span id="lastSync">--:--</span>
+                    </span>
+                </div>
+                
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Data/Hora</th>
-                            <th>Espaço Livre</th>
-                            <th>GB Livres</th>
+                            <th>Disco Livre</th>
+                            <th>CPU (%)</th>
+                            <th>RAM Livre (GB)</th>
                             <th>Observações</th>
                             <th>Capacidade na Época</th>
                             <th>Ações</th>
@@ -827,23 +942,23 @@
             <h2 class="card-title">ℹ️ Informações do Sistema</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">📋 Como Funciona</h3>
+                    <h3 style="margin-bottom: 10px; color: var(--primary-color);">📋 Métricas Monitoradas</h3>
                     <ul style="color: var(--text-secondary); line-height: 1.6;">
-                        <li>A <strong>capacidade configurada acima</strong> é a referência para todos os cálculos</li>
-                        <li>Os registros mantêm a <strong>capacidade da época</strong> em que foram coletados</li>
-                        <li>As porcentagens são <strong>recalculadas automaticamente</strong> para a capacidade atual</li>
-                        <li>Projeções baseadas no <strong>consumo real em GB</strong> com valor fixo de 39.962 GB usado inicial</li>
+                        <li><strong>Disco D:</strong> Espaço livre em % e GB</li>
+                        <li><strong>CPU:</strong> Porcentagem de uso do processador</li>
+                        <li><strong>RAM:</strong> GB livres de memória</li>
+                        <li><strong>Tendências:</strong> Consumo diário e projeções</li>
+                        <li><strong>Alertas:</strong> Automáticos baseados em limites</li>
                     </ul>
                 </div>
                 <div>
                     <h3 style="margin-bottom: 10px; color: var(--primary-color);">⚙️ Dados Técnicos</h3>
                     <ul style="color: var(--text-secondary); line-height: 1.6;">
                         <li><strong>Servidor:</strong> Servidor de Anexos - Produção</li>
-                        <li><strong>Disco:</strong> D: (Armazenamento de arquivos)</li>
-                        <li><strong>Capacidade atual:</strong> <span id="infoCapacity">3000</span> GB</li>
-                        <li><strong>Base projeções:</strong> 39.962 GB usado inicial</li>
+                        <li><strong>Disco D:</strong> <span id="infoCapacity">3000</span> GB</li>
                         <li><strong>Total registros:</strong> <span id="infoRecords">0</span></li>
-                        <li><strong>Armazenamento:</strong> Firebase Cloud</li>
+                        <li><strong>Alertas CPU:</strong> >80% (Alerta), >90% (Crítico)</li>
+                        <li><strong>Alertas RAM:</strong> <10 GB (Alerta), <5 GB (Crítico)</li>
                     </ul>
                 </div>
             </div>
@@ -880,7 +995,7 @@
         <div id="editModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title" id="editModalTitle">📝 Novo Registro de Disco</h2>
+                    <h2 class="modal-title" id="editModalTitle">📝 Novo Registro de Monitoramento</h2>
                     <div class="close-modal" id="closeEditModal">&times;</div>
                 </div>
                 <form id="dataForm">
@@ -892,21 +1007,57 @@
                         <label class="form-label" for="inputTime">Hora (HH:MM)</label>
                         <input type="text" id="inputTime" class="form-input" placeholder="HH:MM" required>
                     </div>
+                    
                     <div class="form-group">
                         <label class="form-label" for="inputDisk">
-                            Espaço Livre no Disco D:
+                            💾 Espaço Livre no Disco D:
                             <span style="font-size:0.85rem; color:var(--text-secondary)">(% ou GB)</span>
                         </label>
                         <input type="number" step="0.01" id="inputDisk" class="form-input two-decimals" 
                                placeholder="Ex: 90.00 (para %) ou 2700.00 (para GB)" required>
                         <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
-                            <span id="diskInputHelp">Capacidade atual: <span id="modalCurrentCapacity">3000</span> GB</span>
+                            Capacidade atual: <span id="modalCurrentCapacity">3000</span> GB
                         </div>
                     </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="inputCpu">
+                            ⚙️ Uso da CPU (%)
+                        </label>
+                        <input type="number" step="0.01" id="inputCpu" class="form-input two-decimals" 
+                               placeholder="Ex: 25.50" min="0" max="100" required>
+                        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                            Porcentagem de uso do processador (0-100%)
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="inputRam">
+                            💽 Memória RAM Livre (GB)
+                        </label>
+                        <input type="number" step="0.1" id="inputRam" class="form-input" 
+                               placeholder="Ex: 59.8" min="0" required>
+                        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                            GB livres de memória RAM (ex: 59.8 GB)
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label class="form-label" for="inputObservations">Observações (opcional)</label>
-                        <textarea id="inputObservations" class="form-input" rows="3" placeholder="Ex: 'Backup realizado', 'Limpeza de arquivos temporários', etc..."></textarea>
+                        <textarea id="inputObservations" class="form-input" rows="3" 
+                                  placeholder="Ex: 'Backup realizado', 'Pico de uso identificado', etc..."></textarea>
                     </div>
+                    
+                    <div class="form-group">
+                        <div class="alert alert-success">
+                            <div class="alert-icon">💡</div>
+                            <div>
+                                <strong>Informação:</strong> Este registro será salvo com a capacidade atual 
+                                (<span id="modalCapacity">3000</span> GB) como referência para o disco.
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-actions">
                         <button type="submit" id="saveBtn" class="btn btn-secondary">
                             <span>💾</span> Salvar Registro
@@ -921,8 +1072,10 @@
 
         <!-- Footer -->
         <footer>
-            <p>Sistema de Monitoramento de Disco D: | Desenvolvido para GTI</p>
-            <p style="font-size:0.9rem; margin-top:5px;">Capacidade atual: <strong id="footerCapacity">3000 GB</strong> | Base projeções: <strong>39.962 GB usado inicial</strong></p>
+            <p>Sistema de Monitoramento Completo do Servidor | Desenvolvido para GTI</p>
+            <p style="font-size:0.9rem; margin-top:5px;">
+                Monitorando: <strong>Disco D:</strong> | <strong>CPU</strong> | <strong>Memória RAM</strong>
+            </p>
         </footer>
     </div>
 
@@ -943,15 +1096,21 @@
                 measurementId: "G-WECBVPST4T"
             },
             DEFAULT_DISK_CAPACITY: 3000,
-            // VALOR FIXO DE ESPAÇO USADO PARA PROJEÇÕES
-            FIXED_USED_GB_FOR_PROJECTIONS: 39.962,
-            COLLECTION_NAME: "monitoramento_disco",
-            CONFIG_COLLECTION: "config_disco",
+            COLLECTION_NAME: "monitoramento_completo",
+            CONFIG_COLLECTION: "config_completo",
             CONFIG_DISK_CAPACITY_DOC: "disk_capacity",
             
-            // Limiares de alerta
-            CRITICAL_FREE_PERCENT: 5,
-            WARNING_FREE_PERCENT: 20,
+            // Limiares de alerta - DISCO
+            DISK_CRITICAL_PERCENT: 5,
+            DISK_WARNING_PERCENT: 20,
+            
+            // Limiares de alerta - CPU
+            CPU_CRITICAL_PERCENT: 90,
+            CPU_WARNING_PERCENT: 80,
+            
+            // Limiares de alerta - RAM
+            RAM_CRITICAL_GB: 5,
+            RAM_WARNING_GB: 10,
             
             // Projeções
             PROJECTION_DAYS: [30, 60, 90, 180, 365]
@@ -967,7 +1126,13 @@
             editingId: null,
             data: [],
             diskCapacity: CONFIG.DEFAULT_DISK_CAPACITY,
-            unsubscribe: null
+            unsubscribe: null,
+            charts: {
+                disk: null,
+                cpu: null,
+                ram: null,
+                pie: null
+            }
         };
 
         // ============================================
@@ -1000,7 +1165,7 @@
             currentCapacityDisplay: document.getElementById('currentCapacityDisplay'),
             capacityInfo: document.getElementById('capacityInfo'),
             
-            // Cards principais
+            // Cards principais - DISCO
             currentFreePercent: document.getElementById('currentFreePercent'),
             currentFreeLabel: document.getElementById('currentFreeLabel'),
             totalCapacity: document.getElementById('totalCapacity'),
@@ -1008,21 +1173,32 @@
             currentUsedGB: document.getElementById('currentUsedGB'),
             lastUpdateTime: document.getElementById('lastUpdateTime'),
             
+            // Cards principais - CPU
+            currentCpuPercent: document.getElementById('currentCpuPercent'),
+            cpuStatus: document.getElementById('cpuStatus'),
+            cpuTrend: document.getElementById('cpuTrend'),
+            cpuAverage: document.getElementById('cpuAverage'),
+            cpuMax: document.getElementById('cpuMax'),
+            
+            // Cards principais - RAM
+            currentRamFree: document.getElementById('currentRamFree'),
+            ramStatus: document.getElementById('ramStatus'),
+            ramTrend: document.getElementById('ramTrend'),
+            ramAverage: document.getElementById('ramAverage'),
+            ramMin: document.getElementById('ramMin'),
+            
             // Card de tendência
             trendValue: document.getElementById('trendValue'),
             trendIcon: document.getElementById('trendIcon'),
             trendText: document.getElementById('trendText'),
             trendExplanation: document.getElementById('trendExplanation'),
             daysRemaining: document.getElementById('daysRemaining'),
-            statusText: document.getElementById('statusText'),
+            diskStatusText: document.getElementById('diskStatusText'),
             totalRecords: document.getElementById('totalRecords'),
             periodDays: document.getElementById('periodDays'),
             
             // Gráficos
-            lineChart: null,
-            pieChart: null,
             chartCapacity: document.getElementById('chartCapacity'),
-            pieCapacity: document.getElementById('pieCapacity'),
             
             // Projeções
             projectionCards: document.getElementById('projectionCards'),
@@ -1033,7 +1209,10 @@
             exportBtn: document.getElementById('exportBtn'),
             importBtn: document.getElementById('importBtn'),
             importFile: document.getElementById('importFile'),
+            loadSampleBtn: document.getElementById('loadSampleBtn'),
             dataTableBody: document.getElementById('dataTableBody'),
+            tableTotalRecords: document.getElementById('tableTotalRecords'),
+            lastSync: document.getElementById('lastSync'),
             
             // Modal de edição
             editModal: document.getElementById('editModal'),
@@ -1045,14 +1224,15 @@
             inputDate: document.getElementById('inputDate'),
             inputTime: document.getElementById('inputTime'),
             inputDisk: document.getElementById('inputDisk'),
+            inputCpu: document.getElementById('inputCpu'),
+            inputRam: document.getElementById('inputRam'),
             inputObservations: document.getElementById('inputObservations'),
-            diskInputHelp: document.getElementById('diskInputHelp'),
             modalCurrentCapacity: document.getElementById('modalCurrentCapacity'),
+            modalCapacity: document.getElementById('modalCapacity'),
             
             // Informações
             infoCapacity: document.getElementById('infoCapacity'),
             infoRecords: document.getElementById('infoRecords'),
-            footerCapacity: document.getElementById('footerCapacity'),
             
             // Alertas
             systemAlerts: document.getElementById('systemAlerts')
@@ -1130,11 +1310,6 @@
                 };
             },
             
-            // Calcular espaço livre baseado no valor FIXO de espaço usado
-            calculateFreeGBFromFixedUsed: (capacity, fixedUsedGB) => {
-                return capacity - fixedUsedGB;
-            },
-            
             generateId: () => {
                 return Date.now().toString(36) + Math.random().toString(36).substr(2);
             },
@@ -1147,6 +1322,8 @@
                 if (type === 'danger') icon = '❌';
                 if (type === 'warning') icon = '⚠️';
                 if (type === 'success') icon = '✅';
+                if (type === 'cpu') icon = '⚙️';
+                if (type === 'ram') icon = '💽';
                 
                 alertDiv.innerHTML = `
                     <div class="alert-icon">${icon}</div>
@@ -1162,6 +1339,64 @@
                 setTimeout(() => {
                     alertDiv.remove();
                 }, 10000);
+            },
+            
+            // Calcular estatísticas para CPU
+            calculateCpuStats: (data) => {
+                if (data.length === 0) return null;
+                
+                const cpuValues = data.map(record => record.cpu);
+                const sum = cpuValues.reduce((a, b) => a + b, 0);
+                const avg = sum / cpuValues.length;
+                const max = Math.max(...cpuValues);
+                const min = Math.min(...cpuValues);
+                
+                // Calcular tendência (últimos 5 registros)
+                let trend = 0;
+                if (data.length >= 5) {
+                    const recent = data.slice(0, 5).map(r => r.cpu);
+                    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                    const older = data.slice(5, 10).map(r => r.cpu);
+                    const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : recentAvg;
+                    trend = recentAvg - olderAvg;
+                }
+                
+                return {
+                    average: parseFloat(avg.toFixed(2)),
+                    max: parseFloat(max.toFixed(2)),
+                    min: parseFloat(min.toFixed(2)),
+                    trend: parseFloat(trend.toFixed(2)),
+                    current: data[0]?.cpu || 0
+                };
+            },
+            
+            // Calcular estatísticas para RAM
+            calculateRamStats: (data) => {
+                if (data.length === 0) return null;
+                
+                const ramValues = data.map(record => record.ramLivre);
+                const sum = ramValues.reduce((a, b) => a + b, 0);
+                const avg = sum / ramValues.length;
+                const max = Math.max(...ramValues);
+                const min = Math.min(...ramValues);
+                
+                // Calcular tendência (últimos 5 registros)
+                let trend = 0;
+                if (data.length >= 5) {
+                    const recent = data.slice(0, 5).map(r => r.ramLivre);
+                    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                    const older = data.slice(5, 10).map(r => r.ramLivre);
+                    const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : recentAvg;
+                    trend = recentAvg - olderAvg; // positivo = mais RAM livre
+                }
+                
+                return {
+                    average: parseFloat(avg.toFixed(1)),
+                    max: parseFloat(max.toFixed(1)),
+                    min: parseFloat(min.toFixed(1)),
+                    trend: parseFloat(trend.toFixed(1)),
+                    current: data[0]?.ramLivre || 0
+                };
             }
         };
 
@@ -1255,6 +1490,10 @@
                         
                         updateUI();
                         
+                        // Atualizar hora da última sincronização
+                        const now = new Date();
+                        elements.lastSync.textContent = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                        
                     }, (error) => {
                         console.error("❌ Erro no listener do Firebase:", error);
                     });
@@ -1282,6 +1521,8 @@
                 const firebaseRecord = {
                     timestamp: record.timestamp,
                     discoLivre: parseFloat(freePercent.toFixed(2)),
+                    cpu: parseFloat(record.cpu.toFixed(2)),
+                    ramLivre: parseFloat(record.ramLivre.toFixed(1)),
                     capacidadeRegistro: state.diskCapacity, // Salvar capacidade da época
                     discoLivreGB: (freePercent / 100) * state.diskCapacity,
                     observacoes: record.observacoes || "",
@@ -1341,6 +1582,398 @@
         }
 
         // ============================================
+        // FUNÇÕES DE CÁLCULO DE CONSUMO E PROJEÇÕES
+        // ============================================
+
+        /**
+         * Calcula o consumo diário médio do disco com base nos dados históricos
+         */
+        function calculateDailyDiskConsumption() {
+            console.log('📊 Calculando consumo diário...');
+            
+            // Verificar se há dados suficientes
+            if (state.data.length < 2) {
+                console.log('⚠️ Dados insuficientes para cálculo');
+                return { 
+                    dailyConsumptionGB: 0, 
+                    totalDays: 0, 
+                    validPairs: 0, 
+                    confidence: 'insufficient_data' 
+                };
+            }
+            
+            // Ordenar dados do mais antigo para o mais recente
+            const sortedData = [...state.data].sort((a, b) => {
+                return new Date(a.timestamp) - new Date(b.timestamp);
+            });
+            
+            let totalConsumptionGB = 0;
+            let totalDays = 0;
+            let validPairs = 0;
+            
+            // Analisar cada par consecutivo de registros
+            for (let i = 0; i < sortedData.length - 1; i++) {
+                const record1 = sortedData[i];
+                const record2 = sortedData[i + 1];
+                
+                // Obter a capacidade correta para cada registro
+                const capacity1 = record1.capacidadeRegistro || state.diskCapacity;
+                const capacity2 = record2.capacidadeRegistro || state.diskCapacity;
+                
+                // Calcular espaço livre em GB para cada registro
+                const freeGB1 = (record1.discoLivre / 100) * capacity1;
+                const freeGB2 = (record2.discoLivre / 100) * capacity2;
+                
+                // Calcular consumo entre os dois registros (GB perdidos)
+                const consumptionGB = freeGB1 - freeGB2;
+                
+                // Calcular dias entre os registros
+                const timeDiff = new Date(record2.timestamp) - new Date(record1.timestamp);
+                const daysBetween = timeDiff / (1000 * 60 * 60 * 24);
+                
+                // Só considerar se houve consumo positivo E intervalo de pelo menos 0.1 dias
+                if (consumptionGB > 0 && daysBetween > 0.1) {
+                    totalConsumptionGB += consumptionGB;
+                    totalDays += daysBetween;
+                    validPairs++;
+                }
+            }
+            
+            // Calcular consumo diário médio
+            let dailyConsumptionGB = 0;
+            let confidence = 'low';
+            
+            if (validPairs > 0 && totalDays > 0) {
+                dailyConsumptionGB = totalConsumptionGB / totalDays;
+                
+                // Determinar confiança baseada na quantidade de dados
+                if (validPairs >= 5 && totalDays >= 30) {
+                    confidence = 'high';
+                } else if (validPairs >= 3 && totalDays >= 7) {
+                    confidence = 'medium';
+                }
+                
+                console.log(`✅ Cálculo: ${dailyConsumptionGB.toFixed(2)} GB/dia, ${validPairs} pares válidos, ${totalDays.toFixed(1)} dias`);
+            }
+            
+            return { 
+                dailyConsumptionGB, 
+                totalDays, 
+                validPairs, 
+                confidence 
+            };
+        }
+
+        /**
+         * Atualiza o card de tendência com o consumo calculado
+         */
+        function calculateAndUpdateDiskTrend() {
+            console.log('📈 Atualizando tendência do disco...');
+            
+            // Verificar se há dados
+            if (state.data.length === 0) {
+                elements.trendIcon.textContent = "📊";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Adicione registros para calcular tendência";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "SEM DADOS";
+                elements.periodDays.textContent = "0 dias";
+                return;
+            }
+            
+            // Obter o registro mais recente
+            const latestRecord = state.data[0];
+            const latestUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            if (state.data.length < 2) {
+                elements.trendIcon.textContent = "📊";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Adicione mais registros para calcular tendência";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "NORMAL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+                elements.periodDays.textContent = "0 dias";
+                return;
+            }
+            
+            // Calcular consumo diário
+            const { dailyConsumptionGB, totalDays, validPairs, confidence } = calculateDailyDiskConsumption();
+            
+            // Atualizar elementos da tendência
+            if (dailyConsumptionGB > 0.01) { // Consumo significativo
+                elements.trendIcon.textContent = "📈";
+                elements.trendText.textContent = `${dailyConsumptionGB.toFixed(2)} GB/dia`;
+                elements.trendExplanation.textContent = `Baseado em ${validPairs} períodos (${totalDays.toFixed(1)} dias)`;
+                
+                // Calcular dias restantes até o disco ficar cheio
+                const daysRemaining = Math.floor(latestUsage.freeGB / dailyConsumptionGB);
+                elements.daysRemaining.textContent = daysRemaining > 1000 ? "∞" : daysRemaining;
+                
+                // Atualizar status baseado nos dias restantes
+                if (daysRemaining < 30) {
+                    elements.diskStatusText.textContent = "CRÍTICO";
+                    elements.diskStatusText.classList.add('status-critical');
+                    elements.diskStatusText.classList.remove('status-warning', 'status-good');
+                } else if (daysRemaining < 90) {
+                    elements.diskStatusText.textContent = "ALERTA";
+                    elements.diskStatusText.classList.add('status-warning');
+                    elements.diskStatusText.classList.remove('status-critical', 'status-good');
+                } else {
+                    elements.diskStatusText.textContent = "NORMAL";
+                    elements.diskStatusText.classList.add('status-good');
+                    elements.diskStatusText.classList.remove('status-critical', 'status-warning');
+                }
+                
+                // Adicionar ícone de confiança
+                let confidenceIcon = "";
+                if (confidence === 'high') confidenceIcon = "✅";
+                else if (confidence === 'medium') confidenceIcon = "⚠️";
+                else confidenceIcon = "❓";
+                
+                elements.trendExplanation.textContent += ` ${confidenceIcon}`;
+                
+            } else if (dailyConsumptionGB < -0.01) { // Ganho de espaço
+                elements.trendIcon.textContent = "📉";
+                elements.trendText.textContent = `${Math.abs(dailyConsumptionGB).toFixed(2)} GB/dia (ganho)`;
+                elements.trendExplanation.textContent = "Espaço livre está aumentando";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "ESTÁVEL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+            } else { // Consumo insignificante ou nulo
+                elements.trendIcon.textContent = "➡️";
+                elements.trendText.textContent = "0.00 GB/dia";
+                elements.trendExplanation.textContent = "Consumo estável ou insignificante";
+                elements.daysRemaining.textContent = "∞";
+                elements.diskStatusText.textContent = "ESTÁVEL";
+                elements.diskStatusText.classList.add('status-good');
+                elements.diskStatusText.classList.remove('status-warning', 'status-critical');
+            }
+            
+            // Calcular período total de análise
+            if (state.data.length > 1) {
+                const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                const firstDate = new Date(sortedData[0].timestamp);
+                const lastDate = new Date(sortedData[sortedData.length - 1].timestamp);
+                const daysBetween = Math.floor((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+                elements.periodDays.textContent = `${daysBetween} dias`;
+            }
+        }
+
+        /**
+         * Atualiza as projeções de espaço em disco
+         */
+        function updateProjections() {
+            console.log('🔮 Atualizando projeções...');
+            
+            // Limpar container
+            elements.projectionCards.innerHTML = '';
+            
+            // Verificar se há dados suficientes
+            if (state.data.length < 2) {
+                elements.projectionCards.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                        <h3 style="margin-bottom: 10px;">Adicione mais registros para ver as projeções</h3>
+                        <p>Precisamos de pelo menos 2 registros com consumo para calcular projeções.</p>
+                        <p style="margin-top: 15px; font-size: 0.9rem;">
+                            <strong>Dica:</strong> Use o botão "Dados de Exemplo" para testar o sistema.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Obter o registro mais recente
+            const latestRecord = state.data[0];
+            const latestUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            
+            // Calcular consumo diário
+            const { dailyConsumptionGB, validPairs, confidence } = calculateDailyDiskConsumption();
+            
+            // Se não houver consumo significativo, mostrar mensagem
+            if (dailyConsumptionGB < 0.01) {
+                elements.projectionCards.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                        <h3 style="margin-bottom: 10px;">Consumo estável ou muito baixo</h3>
+                        <p>Taxa de consumo: <strong>${dailyConsumptionGB.toFixed(2)} GB/dia</strong></p>
+                        <p>Com esta taxa, o disco permanecerá estável por muito tempo.</p>
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(46, 204, 113, 0.1); border-radius: 8px;">
+                            <strong>✅ Status atual:</strong> ${latestUsage.freePercent.toFixed(2)}% livre<br>
+                            <strong>📊 GB livres:</strong> ${latestUsage.freeGB.toFixed(2)} GB
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calcular confiança das projeções
+            let confidenceText = "";
+            let confidenceColor = "";
+            
+            if (confidence === 'high') {
+                confidenceText = "Alta confiança";
+                confidenceColor = "var(--secondary-color)";
+            } else if (confidence === 'medium') {
+                confidenceText = "Média confiança";
+                confidenceColor = "var(--warning-color)";
+            } else {
+                confidenceText = "Baixa confiança";
+                confidenceColor = "var(--text-secondary)";
+            }
+            
+            // Criar header informativo
+            const infoHeader = document.createElement('div');
+            infoHeader.style.cssText = `
+                grid-column: 1 / -1;
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 15px;
+                border-left: 4px solid ${confidenceColor};
+            `;
+            infoHeader.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <strong>📊 Base de cálculo:</strong> ${validPairs} períodos válidos<br>
+                        <strong>📈 Taxa média:</strong> ${dailyConsumptionGB.toFixed(2)} GB/dia<br>
+                        <strong>🎯 Confiança:</strong> <span style="color: ${confidenceColor}">${confidenceText}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">
+                            ${latestUsage.freePercent.toFixed(2)}% livre
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            ${latestUsage.freeGB.toFixed(2)} GB de ${state.diskCapacity} GB
+                        </div>
+                    </div>
+                </div>
+            `;
+            elements.projectionCards.appendChild(infoHeader);
+            
+            // Criar projeções para cada período
+            CONFIG.PROJECTION_DAYS.forEach(days => {
+                const consumptionGB = dailyConsumptionGB * days;
+                const projectedFreeGB = Math.max(0, latestUsage.freeGB - consumptionGB);
+                const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
+                
+                // Calcular data futura
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + days);
+                const formattedDate = utils.formatDate(futureDate);
+                
+                // Determinar status e cor
+                let statusClass = 'status-good';
+                let statusText = 'NORMAL';
+                let statusIcon = '✅';
+                let borderColor = 'var(--secondary-color)';
+                
+                if (projectedFreePercent < CONFIG.DISK_CRITICAL_PERCENT) {
+                    statusClass = 'status-critical';
+                    statusText = 'CRÍTICO';
+                    statusIcon = '🚨';
+                    borderColor = 'var(--danger-color)';
+                } else if (projectedFreePercent < CONFIG.DISK_WARNING_PERCENT) {
+                    statusClass = 'status-warning';
+                    statusText = 'ALERTA';
+                    statusIcon = '⚠️';
+                    borderColor = 'var(--warning-color)';
+                }
+                
+                // Criar card de projeção
+                const card = document.createElement('div');
+                card.className = 'projection-card';
+                card.style.borderLeft = `5px solid ${borderColor}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div class="projection-title">${days} dias</div>
+                        <div style="font-size: 1.2rem;">${statusIcon}</div>
+                    </div>
+                    <div class="projection-date">${formattedDate}</div>
+                    <div class="projection-value ${statusClass}" style="font-size: 2.2rem;">
+                        ${projectedFreePercent.toFixed(2)}%
+                    </div>
+                    <div style="color: var(--text-secondary); margin: 10px 0; font-size: 1.1rem;">
+                        ${projectedFreeGB.toFixed(2)} GB livres
+                    </div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 6px; margin-top: 10px;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            <strong>Consumo estimado:</strong> ${consumptionGB.toFixed(2)} GB<br>
+                            <strong>Status:</strong> ${statusText}<br>
+                            <strong>Capacidade total:</strong> ${state.diskCapacity} GB
+                        </div>
+                    </div>
+                `;
+                
+                elements.projectionCards.appendChild(card);
+            });
+            
+            // Adicionar projeção de esgotamento total (se aplicável)
+            if (dailyConsumptionGB > 0.01) {
+                const daysToFull = Math.ceil(latestUsage.freeGB / dailyConsumptionGB);
+                
+                if (daysToFull > 0 && daysToFull < 365 * 5) { // Limitar a 5 anos
+                    const fullDate = new Date();
+                    fullDate.setDate(fullDate.getDate() + daysToFull);
+                    const formattedFullDate = utils.formatDate(fullDate);
+                    
+                    const warningCard = document.createElement('div');
+                    warningCard.className = 'projection-card';
+                    warningCard.style.cssText = `
+                        grid-column: 1 / -1;
+                        border-left: 5px solid var(--danger-color);
+                        background: rgba(231, 76, 60, 0.05);
+                    `;
+                    warningCard.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="font-size: 1.5rem;">🚨</div>
+                            <div style="font-weight: bold; font-size: 1.2rem; color: var(--danger-color);">
+                                Projeção de Esgotamento
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin: 20px 0;">
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--danger-color);">
+                                ${daysToFull} dias
+                            </div>
+                            <div style="color: var(--text-secondary); margin-top: 5px;">
+                                até o disco ficar completamente cheio
+                            </div>
+                        </div>
+                        <div style="background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                                <div>
+                                    <strong>Data estimada:</strong><br>
+                                    ${formattedFullDate}
+                                </div>
+                                <div>
+                                    <strong>Taxa atual:</strong><br>
+                                    ${dailyConsumptionGB.toFixed(2)} GB/dia
+                                </div>
+                                <div>
+                                    <strong>GB livres hoje:</strong><br>
+                                    ${latestUsage.freeGB.toFixed(2)} GB
+                                </div>
+                                <div>
+                                    <strong>GB consumidos:</strong><br>
+                                    ${(dailyConsumptionGB * daysToFull).toFixed(2)} GB
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                            ⚠️ Esta projeção assume que a taxa de consumo permanecerá constante
+                        </div>
+                    `;
+                    
+                    elements.projectionCards.appendChild(warningCard);
+                }
+            }
+            
+            console.log(`✅ Projeções atualizadas: ${CONFIG.PROJECTION_DAYS.length} períodos`);
+        }
+
+        // ============================================
         // FUNÇÕES DE INTERFACE
         // ============================================
         function updateCapacityDisplay() {
@@ -1348,10 +1981,9 @@
             elements.currentCapacityDisplay.textContent = `${state.diskCapacity} GB`;
             elements.totalCapacity.textContent = `${state.diskCapacity} GB`;
             elements.chartCapacity.textContent = `${state.diskCapacity} GB`;
-            elements.pieCapacity.textContent = `${state.diskCapacity} GB`;
             elements.infoCapacity.textContent = state.diskCapacity;
-            elements.footerCapacity.textContent = `${state.diskCapacity} GB`;
             elements.modalCurrentCapacity.textContent = state.diskCapacity;
+            elements.modalCapacity.textContent = state.diskCapacity;
             
             // Atualizar mensagens
             if (state.isAdmin) {
@@ -1362,7 +1994,7 @@
                 elements.capacityInput.placeholder = "Nova capacidade em GB";
             } else {
                 elements.capacityHelpText.textContent = '🔒 Apenas administradores podem alterar esta configuração';
-                elements.capacityMessage.textContent = 'Esta é a referência principal para todos os cálculos';
+                elements.capacityMessage.textContent = 'Referência para cálculos de espaço em disco';
                 elements.adminCapacityControls.classList.add('hidden');
                 elements.capacityInput.disabled = true;
                 elements.capacityInput.placeholder = "Faça login para alterar";
@@ -1370,6 +2002,8 @@
         }
 
         function updateUI() {
+            console.log('🔄 Atualizando interface...');
+            
             if (state.data.length === 0) {
                 showEmptyState();
                 return;
@@ -1378,63 +2012,118 @@
             const latestRecord = state.data[0];
             updateMainCards(latestRecord);
             updateCharts();
+            
+            // Atualizar tendência e projeções (FUNÇÕES CORRETAS)
+            calculateAndUpdateDiskTrend();
             updateProjections();
+            
+            // Atualizar alertas
             updateAlerts(latestRecord);
             
             if (state.isAdmin) {
                 updateDataTable();
             }
+            
+            // Atualizar contadores
+            elements.infoRecords.textContent = state.data.length;
+            elements.tableTotalRecords.textContent = state.data.length;
+            elements.totalRecords.textContent = state.data.length;
+            
+            console.log('✅ Interface atualizada');
         }
 
         function showEmptyState() {
-            // Cards principais
+            console.log('📭 Mostrando estado vazio...');
+            
+            // Disco
             elements.currentFreePercent.textContent = "0.00%";
-            elements.currentFreeLabel.textContent = "Sem dados disponíveis";
             elements.currentFreeGB.textContent = "0.0 GB";
             elements.currentUsedGB.textContent = "0.0 GB";
             elements.lastUpdateTime.textContent = "--:--";
             
-            // Card de tendência
-            elements.trendIcon.textContent = "➡️";
+            // CPU
+            elements.currentCpuPercent.textContent = "0.00%";
+            elements.cpuStatus.textContent = "SEM DADOS";
+            elements.cpuTrend.textContent = "0.00%";
+            elements.cpuAverage.textContent = "0.00%";
+            elements.cpuMax.textContent = "0.00%";
+            
+            // RAM
+            elements.currentRamFree.textContent = "0.0 GB";
+            elements.ramStatus.textContent = "SEM DADOS";
+            elements.ramTrend.textContent = "0.0 GB";
+            elements.ramAverage.textContent = "0.0 GB";
+            elements.ramMin.textContent = "0.0 GB";
+            
+            // Tendência
+            elements.trendIcon.textContent = "📊";
             elements.trendText.textContent = "0.00 GB/dia";
             elements.daysRemaining.textContent = "∞";
-            elements.statusText.textContent = "SEM DADOS";
-            elements.statusText.className = "detail-value";
-            elements.totalRecords.textContent = "0";
+            elements.diskStatusText.textContent = "SEM DADOS";
             elements.periodDays.textContent = "0 dias";
-            
-            // Atualizar contadores
-            elements.infoRecords.textContent = "0";
-            elements.totalRecords.textContent = "0";
             
             // Limpar gráficos
             clearCharts();
             
-            // Mensagem nas projeções
+            // Mostrar projeções vazias
             elements.projectionCards.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
                     <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
-                    <h3>Adicione registros para ver as projeções</h3>
+                    <h3 style="margin-bottom: 10px;">Adicione registros para ver as projeções</h3>
                     <p>O sistema precisa de dados históricos para calcular projeções futuras.</p>
+                    <div style="margin-top: 20px;">
+                        <button id="loadSampleProjBtn" class="btn btn-primary" style="margin: 5px;">
+                            <span>🧪</span> Carregar Dados de Exemplo
+                        </button>
+                        <button id="addRecordProjBtn" class="btn btn-secondary" style="margin: 5px;">
+                            <span>➕</span> Adicionar Primeiro Registro
+                        </button>
+                    </div>
                 </div>
             `;
+            
+            // Adicionar event listeners aos botões
+            setTimeout(() => {
+                const sampleBtn = document.getElementById('loadSampleProjBtn');
+                const addBtn = document.getElementById('addRecordProjBtn');
+                
+                if (sampleBtn) {
+                    sampleBtn.addEventListener('click', () => {
+                        if (state.isAdmin) {
+                            loadSampleData();
+                        } else {
+                            utils.showAlert('warning', 'Atenção', 'Faça login como administrador para carregar dados de exemplo');
+                        }
+                    });
+                }
+                
+                if (addBtn) {
+                    addBtn.addEventListener('click', () => {
+                        if (state.isAdmin) {
+                            openEditModal();
+                        } else {
+                            utils.showAlert('warning', 'Atenção', 'Faça login como administrador para adicionar registros');
+                        }
+                    });
+                }
+            }, 100);
         }
 
         function updateMainCards(latestRecord) {
-            // Calcular uso atual
-            const usage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            // Calcular uso atual do DISCO
+            const diskUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
             
-            // Atualizar card de status
-            elements.currentFreePercent.textContent = `${usage.freePercent}%`;
-            elements.currentFreeGB.textContent = `${usage.freeGB.toFixed(2)} GB`;
-            elements.currentUsedGB.textContent = `${usage.usedGB.toFixed(2)} GB`;
+            // Atualizar card do DISCO
+            elements.currentFreePercent.textContent = `${diskUsage.freePercent}%`;
+            elements.currentFreeGB.textContent = `${diskUsage.freeGB.toFixed(2)} GB`;
+            elements.currentUsedGB.textContent = `${diskUsage.usedGB.toFixed(2)} GB`;
             elements.lastUpdateTime.textContent = utils.formatTime(latestRecord.timestamp);
             
-            // Colorir o percentual baseado no status
-            if (usage.freePercent < CONFIG.CRITICAL_FREE_PERCENT) {
+            // Colorir o percentual do DISCO baseado no status
+            if (diskUsage.freePercent < CONFIG.DISK_CRITICAL_PERCENT) {
                 elements.currentFreePercent.classList.add('status-critical');
                 elements.currentFreePercent.classList.remove('status-warning', 'status-good');
-            } else if (usage.freePercent < CONFIG.WARNING_FREE_PERCENT) {
+            } else if (diskUsage.freePercent < CONFIG.DISK_WARNING_PERCENT) {
                 elements.currentFreePercent.classList.add('status-warning');
                 elements.currentFreePercent.classList.remove('status-critical', 'status-good');
             } else {
@@ -1442,121 +2131,80 @@
                 elements.currentFreePercent.classList.remove('status-critical', 'status-warning');
             }
             
-            // Calcular tendência
-            calculateAndUpdateTrend();
+            // Atualizar card da CPU
+            elements.currentCpuPercent.textContent = `${latestRecord.cpu.toFixed(2)}%`;
             
-            // Atualizar contadores
-            elements.infoRecords.textContent = state.data.length;
-            elements.totalRecords.textContent = state.data.length;
-        }
-
-        function calculateAndUpdateTrend() {
-            if (state.data.length < 2) {
-                elements.trendIcon.textContent = "➡️";
-                elements.trendText.textContent = "0.00 GB/dia";
-                elements.trendExplanation.textContent = "Adicione mais registros para calcular tendência";
-                elements.daysRemaining.textContent = "∞";
-                elements.statusText.textContent = "NORMAL";
-                elements.periodDays.textContent = "0 dias";
-                return;
-            }
-            
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-            // Calcular consumo total
-            let totalConsumptionGB = 0;
-            let totalDays = 0;
-            
-            for (let i = 0; i < sortedData.length - 1; i++) {
-                const current = utils.calculateCurrentUsage(sortedData[i].discoLivre, state.diskCapacity);
-                const next = utils.calculateCurrentUsage(sortedData[i + 1].discoLivre, state.diskCapacity);
+            // Calcular estatísticas da CPU
+            const cpuStats = utils.calculateCpuStats(state.data);
+            if (cpuStats) {
+                elements.cpuAverage.textContent = `${cpuStats.average}%`;
+                elements.cpuMax.textContent = `${cpuStats.max}%`;
+                elements.cpuTrend.textContent = `${cpuStats.trend > 0 ? '+' : ''}${cpuStats.trend}%`;
                 
-                // Só considerar se houve consumo (espaço livre diminuiu)
-                if (next.freeGB < current.freeGB) {
-                    const consumptionGB = current.freeGB - next.freeGB;
-                    const days = (new Date(sortedData[i + 1].timestamp) - new Date(sortedData[i].timestamp)) / (1000 * 60 * 60 * 24);
-                    
-                    if (days > 0) {
-                        totalConsumptionGB += consumptionGB;
-                        totalDays += days;
-                    }
-                }
-            }
-            
-            // Calcular consumo diário médio
-            const dailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
-            
-            // Atualizar card de tendência
-            if (dailyConsumptionGB > 0) {
-                elements.trendIcon.textContent = "📈";
-                elements.trendText.textContent = `${dailyConsumptionGB.toFixed(2)} GB/dia`;
-                
-                // Atualizar explicação para incluir informação sobre o valor fixo
-                const initialFreeGB = utils.calculateFreeGBFromFixedUsed(state.diskCapacity, CONFIG.FIXED_USED_GB_FOR_PROJECTIONS);
-                const initialFreePercent = (initialFreeGB / state.diskCapacity) * 100;
-                
-                elements.trendExplanation.innerHTML = `
-                    Baseado em ${sortedData.length} registros históricos<br>
-                    <small style="color: var(--text-secondary); font-size: 0.8rem;">
-                        Projeções usam ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS.toFixed(2)} GB como base inicial
-                    </small>
-                `;
-                
-                // Calcular dias restantes baseado no espaço LIVRE inicial (do valor fixo)
-                const daysRemaining = Math.floor(initialFreeGB / dailyConsumptionGB);
-                elements.daysRemaining.textContent = daysRemaining;
-                
-                // Atualizar status
-                if (daysRemaining < 30) {
-                    elements.statusText.textContent = "CRÍTICO";
-                    elements.statusText.className = "detail-value status-critical";
-                } else if (daysRemaining < 90) {
-                    elements.statusText.textContent = "ALERTA";
-                    elements.statusText.className = "detail-value status-warning";
+                // Status da CPU
+                if (latestRecord.cpu > CONFIG.CPU_CRITICAL_PERCENT) {
+                    elements.cpuStatus.textContent = "CRÍTICO";
+                    elements.cpuStatus.classList.add('status-critical');
+                    elements.cpuStatus.classList.remove('status-warning', 'status-good');
+                } else if (latestRecord.cpu > CONFIG.CPU_WARNING_PERCENT) {
+                    elements.cpuStatus.textContent = "ALERTA";
+                    elements.cpuStatus.classList.add('status-warning');
+                    elements.cpuStatus.classList.remove('status-critical', 'status-good');
                 } else {
-                    elements.statusText.textContent = "NORMAL";
-                    elements.statusText.className = "detail-value status-good";
+                    elements.cpuStatus.textContent = "NORMAL";
+                    elements.cpuStatus.classList.add('status-good');
+                    elements.cpuStatus.classList.remove('status-critical', 'status-warning');
                 }
-            } else if (dailyConsumptionGB < 0) {
-                elements.trendIcon.textContent = "📉";
-                elements.trendText.textContent = `${Math.abs(dailyConsumptionGB).toFixed(2)} GB/dia (ganho)`;
-                elements.daysRemaining.textContent = "∞";
-                elements.statusText.textContent = "ESTÁVEL";
-                elements.statusText.className = "detail-value status-good";
-            } else {
-                elements.trendIcon.textContent = "➡️";
-                elements.trendText.textContent = "0.00 GB/dia";
-                elements.daysRemaining.textContent = "∞";
-                elements.statusText.textContent = "ESTÁVEL";
-                elements.statusText.className = "detail-value status-good";
             }
             
-            // Período analisado
-            if (sortedData.length > 1) {
-                const firstDate = new Date(sortedData[0].timestamp);
-                const lastDate = new Date(sortedData[sortedData.length - 1].timestamp);
-                const daysBetween = Math.floor((lastDate - firstDate) / (1000 * 60 * 60 * 24));
-                elements.periodDays.textContent = `${daysBetween} dias`;
-            } else {
-                elements.periodDays.textContent = "0 dias";
+            // Atualizar card da RAM
+            elements.currentRamFree.textContent = `${latestRecord.ramLivre.toFixed(1)} GB`;
+            
+            // Calcular estatísticas da RAM
+            const ramStats = utils.calculateRamStats(state.data);
+            if (ramStats) {
+                elements.ramAverage.textContent = `${ramStats.average} GB`;
+                elements.ramMin.textContent = `${ramStats.min} GB`;
+                elements.ramTrend.textContent = `${ramStats.trend > 0 ? '+' : ''}${ramStats.trend} GB`;
+                
+                // Status da RAM
+                if (latestRecord.ramLivre < CONFIG.RAM_CRITICAL_GB) {
+                    elements.ramStatus.textContent = "CRÍTICO";
+                    elements.ramStatus.classList.add('status-critical');
+                    elements.ramStatus.classList.remove('status-warning', 'status-good');
+                } else if (latestRecord.ramLivre < CONFIG.RAM_WARNING_GB) {
+                    elements.ramStatus.textContent = "ALERTA";
+                    elements.ramStatus.classList.add('status-warning');
+                    elements.ramStatus.classList.remove('status-critical', 'status-good');
+                } else {
+                    elements.ramStatus.textContent = "NORMAL";
+                    elements.ramStatus.classList.add('status-good');
+                    elements.ramStatus.classList.remove('status-critical', 'status-warning');
+                }
             }
         }
 
         function updateCharts() {
             const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             
-            // Gráfico de linha
-            updateLineChart(sortedData);
+            // Gráfico do DISCO
+            updateDiskChart(sortedData);
             
-            // Gráfico de pizza (último registro)
+            // Gráfico da CPU
+            updateCpuChart(sortedData);
+            
+            // Gráfico da RAM
+            updateRamChart(sortedData);
+            
+            // Gráfico de Pizza (último registro)
             updatePieChart(sortedData[sortedData.length - 1]);
         }
 
-        function updateLineChart(sortedData) {
-            const ctx = document.getElementById('lineChart').getContext('2d');
+        function updateDiskChart(sortedData) {
+            const ctx = document.getElementById('diskChart').getContext('2d');
             
-            if (elements.lineChart) {
-                elements.lineChart.destroy();
+            if (state.charts.disk) {
+                state.charts.disk.destroy();
             }
             
             const labels = sortedData.map(record => utils.formatDate(record.timestamp));
@@ -1564,7 +2212,7 @@
                 utils.calculateCurrentUsage(record.discoLivre, state.diskCapacity).freePercent
             );
             
-            elements.lineChart = new Chart(ctx, {
+            state.charts.disk = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -1578,60 +2226,76 @@
                         tension: 0.4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                            },
-                            ticks: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        },
-                        y: {
-                            min: 0,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Espaço Livre (%)',
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
-                            },
-                            grid: {
-                                color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                            },
-                            ticks: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
-                            }
-                        }
-                    }
-                }
+                options: getChartOptions('Espaço Livre (%)', '%', 0, 100)
+            });
+        }
+
+        function updateCpuChart(sortedData) {
+            const ctx = document.getElementById('cpuChart').getContext('2d');
+            
+            if (state.charts.cpu) {
+                state.charts.cpu.destroy();
+            }
+            
+            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
+            const data = sortedData.map(record => record.cpu);
+            
+            state.charts.cpu = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Uso da CPU (%)',
+                        data: data,
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getChartOptions('Uso da CPU (%)', '%', 0, 100)
+            });
+        }
+
+        function updateRamChart(sortedData) {
+            const ctx = document.getElementById('ramChart').getContext('2d');
+            
+            if (state.charts.ram) {
+                state.charts.ram.destroy();
+            }
+            
+            const labels = sortedData.map(record => utils.formatDate(record.timestamp));
+            const data = sortedData.map(record => record.ramLivre);
+            
+            state.charts.ram = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'RAM Livre (GB)',
+                        data: data,
+                        borderColor: '#1abc9c',
+                        backgroundColor: 'rgba(26, 188, 156, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: getChartOptions('RAM Livre (GB)', 'GB')
             });
         }
 
         function updatePieChart(latestRecord) {
             const ctx = document.getElementById('pieChart').getContext('2d');
             
-            if (elements.pieChart) {
-                elements.pieChart.destroy();
+            if (state.charts.pie) {
+                state.charts.pie.destroy();
             }
             
             const usage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
             
-            elements.pieChart = new Chart(ctx, {
+            state.charts.pie = new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: ['Espaço Usado', 'Espaço Livre'],
@@ -1680,145 +2344,105 @@
             });
         }
 
-        function clearCharts() {
-            const lineCtx = document.getElementById('lineChart').getContext('2d');
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            
-            lineCtx.clearRect(0, 0, lineCtx.canvas.width, lineCtx.canvas.height);
-            pieCtx.clearRect(0, 0, pieCtx.canvas.width, pieCtx.canvas.height);
-            
-            if (elements.lineChart) {
-                elements.lineChart.destroy();
-                elements.lineChart = null;
-            }
-            
-            if (elements.pieChart) {
-                elements.pieChart.destroy();
-                elements.pieChart = null;
-            }
-        }
-
-        function updateProjections() {
-            if (state.data.length < 2) {
-                elements.projectionCards.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
-                        <h3>Adicione mais registros para ver as projeções</h3>
-                        <p>Precisamos de pelo menos 2 registros para calcular consumo.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Calcular consumo diário médio
-            const sortedData = [...state.data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            
-            // Calcular tendência de consumo
-            let totalConsumptionGB = 0;
-            let totalDays = 0;
-            
-            for (let i = 0; i < sortedData.length - 1; i++) {
-                const current = utils.calculateCurrentUsage(sortedData[i].discoLivre, state.diskCapacity);
-                const next = utils.calculateCurrentUsage(sortedData[i + 1].discoLivre, state.diskCapacity);
-                
-                // Só considerar se houve consumo (espaço livre diminuiu)
-                if (next.freeGB < current.freeGB) {
-                    const consumptionGB = current.freeGB - next.freeGB;
-                    const days = (new Date(sortedData[i + 1].timestamp) - new Date(sortedData[i].timestamp)) / (1000 * 60 * 60 * 24);
-                    
-                    if (days > 0) {
-                        totalConsumptionGB += consumptionGB;
-                        totalDays += days;
+        function getChartOptions(title, unit, min = null, max = null) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        title: {
+                            display: true,
+                            text: title,
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        },
+                        grid: {
+                            color: state.isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50',
+                            callback: function(value) {
+                                return value + (unit ? unit : '');
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: state.isDarkMode ? '#ecf0f1' : '#2c3e50'
+                        }
                     }
                 }
-            }
-            
-            const dailyConsumptionGB = totalDays > 0 ? totalConsumptionGB / totalDays : 0;
-            
-            // Gerar projeções
-            let projectionsHTML = '';
-            
-            // Calcular espaço livre inicial baseado no valor FIXO de espaço usado
-            const initialFreeGB = utils.calculateFreeGBFromFixedUsed(state.diskCapacity, CONFIG.FIXED_USED_GB_FOR_PROJECTIONS);
-            const initialFreePercent = (initialFreeGB / state.diskCapacity) * 100;
-            
-            // Adicionar card informativo sobre o valor fixo
-            projectionsHTML += `
-                <div class="projection-card projection-base">
-                    <div class="projection-title">⚙️ Base para Projeções</div>
-                    <div class="projection-date">Valor Fixo de Referência</div>
-                    <div class="projection-value" style="color: #9b59b6;">${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS.toFixed(3)} GB</div>
-                    <div style="color: var(--text-secondary); margin: 10px 0;">
-                        Espaço inicial USADO
-                    </div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                        Espaço livre inicial: ${initialFreeGB.toFixed(2)} GB (${initialFreePercent.toFixed(2)}%)
-                    </div>
-                </div>
-            `;
-            
-            CONFIG.PROJECTION_DAYS.forEach(days => {
-                // Projeção baseada no espaço LIVRE inicial (calculado a partir do usado fixo)
-                const consumptionGB = dailyConsumptionGB * days;
-                
-                // ESPAÇO LIVRE projetado = ESPAÇO LIVRE inicial - consumo acumulado
-                const projectedFreeGB = Math.max(0, initialFreeGB - consumptionGB);
-                const projectedFreePercent = (projectedFreeGB / state.diskCapacity) * 100;
-                const projectedUsedGB = state.diskCapacity - projectedFreeGB;
-                
-                // Calcular data futura
-                const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + days);
-                const formattedDate = utils.formatDate(futureDate);
-                
-                // Determinar cor baseada no percentual
-                let statusClass = 'status-good';
-                if (projectedFreePercent < CONFIG.CRITICAL_FREE_PERCENT) {
-                    statusClass = 'status-critical';
-                } else if (projectedFreePercent < CONFIG.WARNING_FREE_PERCENT) {
-                    statusClass = 'status-warning';
-                }
-                
-                projectionsHTML += `
-                    <div class="projection-card">
-                        <div class="projection-title">Daqui a ${days} dias</div>
-                        <div class="projection-date">${formattedDate}</div>
-                        <div class="projection-value ${statusClass}">${projectedFreePercent.toFixed(2)}%</div>
-                        <div style="color: var(--text-secondary); margin: 10px 0;">
-                            ${projectedFreeGB.toFixed(2)} GB livres<br>
-                            ${projectedUsedGB.toFixed(2)} GB usados
-                        </div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                            Consumo estimado: ${consumptionGB.toFixed(2)} GB<br>
-                            Total usado: ${(CONFIG.FIXED_USED_GB_FOR_PROJECTIONS + consumptionGB).toFixed(2)} GB
-                        </div>
-                    </div>
-                `;
+            };
+        }
+
+        function clearCharts() {
+            // Destruir todos os gráficos
+            Object.values(state.charts).forEach(chart => {
+                if (chart) chart.destroy();
             });
             
-            elements.projectionCards.innerHTML = projectionsHTML;
+            // Limpar referências
+            state.charts = {
+                disk: null,
+                cpu: null,
+                ram: null,
+                pie: null
+            };
         }
 
         function updateAlerts(latestRecord) {
             // Limpar alertas antigos
             elements.systemAlerts.innerHTML = '';
             
-            const usage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
+            const diskUsage = utils.calculateCurrentUsage(latestRecord.discoLivre, state.diskCapacity);
             
-            // Alerta de espaço crítico
-            if (usage.freePercent < CONFIG.CRITICAL_FREE_PERCENT) {
-                utils.showAlert('danger', '⚠️ ESPAÇO CRÍTICO', 
-                    `Apenas ${usage.freePercent}% (${usage.freeGB.toFixed(2)} GB) livres no disco D:!`);
+            // Alertas do DISCO
+            if (diskUsage.freePercent < CONFIG.DISK_CRITICAL_PERCENT) {
+                utils.showAlert('danger', '⚠️ ESPAÇO CRÍTICO NO DISCO', 
+                    `Apenas ${diskUsage.freePercent}% (${diskUsage.freeGB.toFixed(2)} GB) livres no disco D:!`);
             }
-            // Alerta de espaço baixo
-            else if (usage.freePercent < CONFIG.WARNING_FREE_PERCENT) {
-                utils.showAlert('warning', '⚠️ ESPAÇO BAIXO', 
-                    `Apenas ${usage.freePercent}% livres. Considere liberar espaço.`);
+            else if (diskUsage.freePercent < CONFIG.DISK_WARNING_PERCENT) {
+                utils.showAlert('warning', '⚠️ ESPAÇO BAIXO NO DISCO', 
+                    `Apenas ${diskUsage.freePercent}% livres. Considere liberar espaço.`);
             }
+            
+            // Alertas da CPU
+            if (latestRecord.cpu > CONFIG.CPU_CRITICAL_PERCENT) {
+                utils.showAlert('cpu', '⚙️ CPU EM NÍVEL CRÍTICO', 
+                    `Uso da CPU em ${latestRecord.cpu.toFixed(2)}%! Verifique o servidor.`);
+            }
+            else if (latestRecord.cpu > CONFIG.CPU_WARNING_PERCENT) {
+                utils.showAlert('cpu', '⚙️ ALTA UTILIZAÇÃO DA CPU', 
+                    `CPU em ${latestRecord.cpu.toFixed(2)}%. Monitorar desempenho.`);
+            }
+            
+            // Alertas da RAM
+            if (latestRecord.ramLivre < CONFIG.RAM_CRITICAL_GB) {
+                utils.showAlert('ram', '💽 RAM CRÍTICA', 
+                    `Apenas ${latestRecord.ramLivre.toFixed(1)} GB de RAM livre!`);
+            }
+            else if (latestRecord.ramLivre < CONFIG.RAM_WARNING_GB) {
+                utils.showAlert('ram', '💽 RAM BAIXA', 
+                    `Apenas ${latestRecord.ramLivre.toFixed(1)} GB de RAM livre.`);
+            }
+            
             // Alerta informativo se for admin
             else if (state.isAdmin && state.data.length > 0) {
                 utils.showAlert('success', '✅ SISTEMA OPERACIONAL', 
-                    `Disco D: com ${usage.freePercent}% livres. ${state.data.length} registros monitorados.`);
+                    `Todos os sistemas monitorados. ${state.data.length} registros.`);
             }
         }
 
@@ -1828,7 +2452,7 @@
             if (state.data.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary)">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary)">
                         Nenhum registro encontrado
                     </td>
                 `;
@@ -1848,7 +2472,18 @@
                         <strong>${record.discoLivre.toFixed(2)}%</strong><br>
                         <small style="color: var(--text-secondary)">${usage.freeGB.toFixed(2)} GB atuais</small>
                     </td>
-                    <td>${usage.freeGB.toFixed(2)} GB</td>
+                    <td>
+                        <span class="${record.cpu > CONFIG.CPU_CRITICAL_PERCENT ? 'status-critical' : 
+                                      record.cpu > CONFIG.CPU_WARNING_PERCENT ? 'status-warning' : 'status-good'}">
+                            ${record.cpu.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td>
+                        <span class="${record.ramLivre < CONFIG.RAM_CRITICAL_GB ? 'status-critical' : 
+                                      record.ramLivre < CONFIG.RAM_WARNING_GB ? 'status-warning' : 'status-good'}">
+                            ${record.ramLivre.toFixed(1)} GB
+                        </span>
+                    </td>
                     <td>${record.observacoes || '-'}</td>
                     <td>
                         ${originalCapacity} GB<br>
@@ -1901,15 +2536,19 @@
                 elements.inputDate.value = utils.formatDate(record.timestamp);
                 elements.inputTime.value = utils.formatTime(record.timestamp);
                 elements.inputDisk.value = record.discoLivre;
+                elements.inputCpu.value = record.cpu;
+                elements.inputRam.value = record.ramLivre;
                 elements.inputObservations.value = record.observacoes || '';
             } else {
-                elements.editModalTitle.textContent = '📝 Novo Registro';
+                elements.editModalTitle.textContent = '📝 Novo Registro de Monitoramento';
                 state.editingId = null;
                 
                 const now = new Date();
                 elements.inputDate.value = utils.formatDate(now);
                 elements.inputTime.value = utils.formatTime(now);
                 elements.inputDisk.value = '';
+                elements.inputCpu.value = '';
+                elements.inputRam.value = '';
                 elements.inputObservations.value = '';
             }
             
@@ -1926,7 +2565,6 @@
                 data: state.data,
                 config: {
                     currentCapacity: state.diskCapacity,
-                    fixedUsedForProjections: CONFIG.FIXED_USED_GB_FOR_PROJECTIONS,
                     exportDate: new Date().toISOString(),
                     totalRecords: state.data.length
                 }
@@ -1934,7 +2572,7 @@
             
             const dataStr = JSON.stringify(dataToExport, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-            const exportFileDefaultName = `monitoramento_disco_${new Date().toISOString().slice(0, 10)}.json`;
+            const exportFileDefaultName = `monitoramento_completo_${new Date().toISOString().slice(0, 10)}.json`;
             
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
@@ -1942,6 +2580,96 @@
             linkElement.click();
             
             utils.showAlert('success', 'Sucesso', 'Backup exportado com sucesso');
+        }
+
+        async function loadSampleData() {
+            if (!confirm('Deseja carregar dados de exemplo?\n\nIsso criará registros simulados para testar o sistema.')) return;
+            
+            const sampleData = [
+                {
+                    timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 85.0,
+                    cpu: 15.5,
+                    ramLivre: 62.3,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Início do monitoramento"
+                },
+                {
+                    timestamp: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 83.5,
+                    cpu: 18.2,
+                    ramLivre: 61.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Crescimento normal"
+                },
+                {
+                    timestamp: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 82.0,
+                    cpu: 22.7,
+                    ramLivre: 60.5,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Backup semanal"
+                },
+                {
+                    timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 80.0,
+                    cpu: 25.3,
+                    ramLivre: 59.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Pico de uso identificado"
+                },
+                {
+                    timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 78.5,
+                    cpu: 19.8,
+                    ramLivre: 60.2,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Uso normalizado"
+                },
+                {
+                    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                    discoLivre: 76.0,
+                    cpu: 32.5,
+                    ramLivre: 58.5,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Processamento em lote"
+                },
+                {
+                    timestamp: new Date().toISOString(),
+                    discoLivre: 74.5,
+                    cpu: 28.7,
+                    ramLivre: 59.8,
+                    capacidadeRegistro: 3000,
+                    observacoes: "Última leitura - sistema estável"
+                }
+            ];
+            
+            try {
+                let successCount = 0;
+                
+                for (const record of sampleData) {
+                    const id = utils.generateId();
+                    await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
+                        id: id,
+                        timestamp: record.timestamp,
+                        discoLivre: record.discoLivre,
+                        cpu: record.cpu,
+                        ramLivre: record.ramLivre,
+                        capacidadeRegistro: record.capacidadeRegistro,
+                        discoLivreGB: (record.discoLivre / 100) * record.capacidadeRegistro,
+                        observacoes: record.observacoes,
+                        sampleData: true,
+                        created: new Date().toISOString()
+                    });
+                    successCount++;
+                }
+                
+                utils.showAlert('success', 'Sucesso', `${successCount} registros de exemplo carregados!`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados de exemplo:', error);
+                utils.showAlert('danger', 'Erro', 'Falha ao carregar dados: ' + error.message);
+            }
         }
 
         function importFromJSON(event) {
@@ -1971,6 +2699,8 @@
                             await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({
                                 timestamp: item.timestamp,
                                 discoLivre: item.discoLivre,
+                                cpu: item.cpu,
+                                ramLivre: item.ramLivre,
                                 capacidadeRegistro: item.capacidadeRegistro || state.diskCapacity,
                                 discoLivreGB: item.discoLivreGB || (item.discoLivre / 100) * (item.capacidadeRegistro || state.diskCapacity),
                                 observacoes: item.observacoes || '',
@@ -2036,12 +2766,29 @@
                 
                 e.target.value = value;
             });
+            
+            elements.inputCpu.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d.]/g, '');
+                
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                if (parts.length === 2 && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+                
+                e.target.value = value;
+            });
         }
 
         function validateForm() {
             const date = elements.inputDate.value;
             const time = elements.inputTime.value;
             const disk = parseFloat(elements.inputDisk.value);
+            const cpu = parseFloat(elements.inputCpu.value);
+            const ram = parseFloat(elements.inputRam.value);
             
             if (!utils.validateDate(date)) {
                 alert('Data inválida! Use o formato DD/MM/AAAA.');
@@ -2058,6 +2805,18 @@
             if (isNaN(disk) || disk < 0) {
                 alert('Valor do disco inválido! Digite um número positivo.');
                 elements.inputDisk.focus();
+                return false;
+            }
+            
+            if (isNaN(cpu) || cpu < 0 || cpu > 100) {
+                alert('Valor da CPU inválido! Digite um número entre 0 e 100.');
+                elements.inputCpu.focus();
+                return false;
+            }
+            
+            if (isNaN(ram) || ram < 0) {
+                alert('Valor da RAM inválido! Digite um número positivo.');
+                elements.inputRam.focus();
                 return false;
             }
             
@@ -2114,8 +2873,9 @@
             }
             
             // Atualizar gráficos
-            if (elements.lineChart) elements.lineChart.update();
-            if (elements.pieChart) elements.pieChart.update();
+            Object.values(state.charts).forEach(chart => {
+                if (chart) chart.update();
+            });
         }
 
         // ============================================
@@ -2159,6 +2919,7 @@
             elements.exportBtn.addEventListener('click', exportToJSON);
             elements.importBtn.addEventListener('click', () => elements.importFile.click());
             elements.importFile.addEventListener('change', importFromJSON);
+            elements.loadSampleBtn.addEventListener('click', loadSampleData);
             
             // Modal de edição
             elements.closeEditModal.addEventListener('click', () => {
@@ -2182,6 +2943,8 @@
                 const record = {
                     timestamp: timestamp,
                     discoLivre: parseFloat(elements.inputDisk.value),
+                    cpu: parseFloat(elements.inputCpu.value),
+                    ramLivre: parseFloat(elements.inputRam.value),
                     observacoes: elements.inputObservations.value
                 };
                 
@@ -2207,8 +2970,7 @@
         // INICIALIZAÇÃO
         // ============================================
         async function init() {
-            console.log('🚀 Inicializando sistema de monitoramento...');
-            console.log(`⚙️ Configuração: Projeções baseadas em ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS} GB usado inicial`);
+            console.log('🚀 Inicializando sistema de monitoramento completo...');
             
             initializeMasks();
             setupEventListeners();
@@ -2221,8 +2983,7 @@
             
             // Mostrar alerta inicial
             utils.showAlert('info', 'Sistema Iniciado', 
-                `Monitoramento do disco D: configurado para ${state.diskCapacity} GB. ` +
-                `Projeções baseadas em ${CONFIG.FIXED_USED_GB_FOR_PROJECTIONS} GB usado inicial.`);
+                `Monitoramento completo ativo: Disco D: (${state.diskCapacity} GB), CPU, RAM`);
         }
 
         document.addEventListener('DOMContentLoaded', init);
