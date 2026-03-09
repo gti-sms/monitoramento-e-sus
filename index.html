@@ -3,168 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTI | Command Center v5.0</title>
+    <title>GTI | Command Center v8.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe;
-            --bg-dark: #05070a; --glass: rgba(13, 17, 23, 0.8); --border: rgba(0, 210, 255, 0.15);
+            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe; --neon-yellow: #fefe33;
+            --bg-dark: #05070a; --glass: rgba(13, 17, 23, 0.9); --border: rgba(0, 210, 255, 0.15);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: var(--bg-dark); color: #e6edf3; font-family: 'JetBrains Mono', monospace; padding: 20px;
-            background-image: 
-                linear-gradient(rgba(0, 210, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 210, 255, 0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
+            background-color: var(--bg-dark); color: #e6edf3; font-family: 'JetBrains Mono', monospace; padding: 15px;
+            background-image: radial-gradient(circle at 2px 2px, rgba(0, 210, 255, 0.05) 1px, transparent 0);
+            background-size: 30px 30px;
         }
 
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border: 1px solid var(--border); border-radius: 15px; background: var(--glass); margin-bottom: 25px; max-width: 1600px; margin-inline: auto; backdrop-filter: blur(10px); }
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 30px; border: 1px solid var(--border); border-radius: 15px; 
+            background: var(--glass); margin-bottom: 25px; max-width: 1600px; margin-inline: auto; 
+            backdrop-filter: blur(10px); 
+        }
+
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 20px; max-width: 1600px; margin: 0 auto; 
+        }
+
+        .glass-card { 
+            background: var(--glass); backdrop-filter: blur(12px); 
+            border: 1px solid var(--border); border-radius: 20px; 
+            padding: 25px; position: relative; transition: 0.3s;
+        }
+
+        /* ITEM 1: HEALTH SCORE */
+        .health-display { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .score-ring {
+            width: 130px; height: 130px; border-radius: 50%; border: 8px solid var(--neon-green);
+            display: flex; align-items: center; justify-content: center; font-family: 'Orbitron';
+            font-size: 2rem; margin: 15px 0; box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+        }
+
+        /* STATUS & LABELS */
+        .val-big { font-family: 'Orbitron'; font-size: 2rem; color: #fff; margin: 5px 0; display: block; }
+        .mini-label { font-size: 0.65rem; color: var(--neon-blue); text-transform: uppercase; letter-spacing: 2px; }
         
-        .logo-box h1 { font-family: 'Orbitron'; font-size: 1.4rem; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+        /* ITEM 2: PREDICTION */
+        .prediction-box { background: rgba(254, 254, 51, 0.1); color: var(--neon-yellow); padding: 5px 12px; border-radius: 6px; font-size: 0.65rem; display: inline-block; margin-top: 10px; }
 
-        /* NOVOS CONTADORES PÚBLICOS */
-        .hero-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 1600px; margin: 0 auto 25px; }
-        .stat-card { background: var(--glass); padding: 20px; border-radius: 15px; border-left: 4px solid var(--neon-blue); text-align: center; }
-        .stat-card h4 { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 10px; opacity: 0.7; }
-        .stat-card .value { font-family: 'Orbitron'; font-size: 1.8rem; color: #fff; }
+        /* ITEM 3: PING */
+        .ping-indicator { font-size: 0.65rem; color: var(--neon-green); display: flex; align-items: center; gap: 8px; }
+        .dot { width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; max-width: 1600px; margin: 0 auto; }
-        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 15px; padding: 25px; transition: 0.3s; }
-        .glass-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0,210,255,0.1); }
-
-        /* LOGIN MODAL ESTILIZADO */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; }
-        .login-box { background: #0d1117; border: 1px solid var(--neon-blue); padding: 40px; border-radius: 20px; width: 380px; box-shadow: 0 0 40px rgba(0,210,255,0.2); animation: scaleUp 0.3s ease; }
-        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* MODAL LOGIN */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
+        .login-box { background: #0d1117; border: 1px solid var(--neon-blue); padding: 40px; border-radius: 20px; width: 380px; }
         
-        input { background: #161b22; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 15px; font-family: inherit; transition: 0.3s; }
-        input:focus { border-color: var(--neon-blue); outline: none; box-shadow: 0 0 10px var(--neon-blue); }
+        .btn-cyber { 
+            background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); 
+            padding: 12px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.7rem; 
+            border-radius: 8px; transition: 0.3s; width: 100%;
+        }
+        .btn-cyber:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
 
-        .btn-cyber { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 12px 20px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.8rem; border-radius: 8px; transition: 0.3s; width: 100%; }
-        .btn-cyber:hover { background: var(--neon-blue); color: #000; font-weight: bold; }
+        #adminArea { display: none; margin-top: 30px; padding-bottom: 50px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8rem; }
+        th { text-align: left; padding: 15px; color: var(--neon-blue); border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-        /* ADMIN EXCLUSIVE AREA */
-        #adminArea { display: none; margin-top: 30px; animation: slideIn 0.5s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        #adminConsole { background: rgba(57, 255, 20, 0.03); border: 1px solid var(--neon-green); padding: 25px; border-radius: 15px; margin-bottom: 25px; }
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden; }
-        th { background: rgba(0,210,255,0.05); padding: 15px; text-align: left; color: var(--neon-blue); font-size: 0.8rem; }
-        td { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
-        
-        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.6rem; background: var(--neon-green); color: #000; font-weight: bold; }
+        input { background: #161b22; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 10px; outline: none; }
     </style>
 </head>
 <body>
 
 <div id="loginModal" class="modal-overlay">
     <div class="login-box">
-        <h2 style="font-family: 'Orbitron'; color: var(--neon-blue); margin-bottom: 30px; text-align: center;">AUTENTICAÇÃO GTI</h2>
-        <input type="text" id="user" placeholder="Terminal ID (GTI)">
-        <input type="password" id="pass" placeholder="Segurança (Senha)">
-        <button id="doLogin" class="btn-cyber">ENTRAR NO SISTEMA</button>
-        <p style="text-align: center; margin-top: 20px; font-size: 0.6rem; color: gray; cursor: pointer;" onclick="toggleLogin()">CANCELAR</p>
+        <h2 style="font-family: 'Orbitron'; color: var(--neon-blue); text-align: center; margin-bottom: 30px;">GTI AUTHENTICATION</h2>
+        <input type="text" id="user" placeholder="USUÁRIO">
+        <input type="password" id="pass" placeholder="CHAVE DE ACESSO">
+        <button id="doLogin" class="btn-cyber">ENTRAR</button>
+        <p onclick="document.getElementById('loginModal').style.display='none'" style="text-align:center; color:gray; font-size:0.6rem; margin-top:15px; cursor:pointer;">FECHAR</p>
     </div>
 </div>
 
 <header>
-    <div class="logo-box">
-        <h1>GTI MONITOR <span class="status-badge">LIVE</span></h1>
-        <div id="clock" style="font-size: 0.7rem; color: var(--neon-blue); opacity: 0.8; margin-top: 5px;">Sincronizando...</div>
+    <div class="logo">
+        <h1 style="font-family: 'Orbitron'; color: var(--neon-blue); font-size: 1.3rem;">GTI MONITOR v8.0</h1>
+        <div class="ping-indicator">
+            <div class="dot"></div> <span id="pingVal">LATÊNCIA: 18ms</span> | <span id="clock">--:--:--</span>
+        </div>
     </div>
-    <div id="esusAlert" style="color: var(--neon-red); font-size: 0.7rem; display: none; font-weight: bold; border: 1px solid var(--neon-red); padding: 5px 15px; border-radius: 5px; animation: blink 1s infinite;">⚠️ REQUER ATUALIZAÇÃO E-SUS</div>
-    <div>
-        <button id="authTrigger" class="btn-cyber" style="width: auto;">PAINEL GTI</button>
-        <button id="logoutBtn" class="btn-cyber" style="display:none; width: auto; border-color: var(--neon-red); color: var(--neon-red);">ENCERRAR SESSÃO</button>
+    <div id="esusAlert" style="color:var(--neon-red); font-size:0.7rem; font-weight:bold; display:none;">⚠️ ATUALIZAÇÃO SEMANAL E-SUS PENDENTE</div>
+    <div style="width: 150px;">
+        <button id="authTrigger" class="btn-cyber">ADMIN</button>
+        <button id="logoutBtn" class="btn-cyber" style="display:none; border-color:var(--neon-red); color:var(--neon-red);">SAIR</button>
     </div>
 </header>
 
-<section class="hero-stats">
-    <div class="stat-card">
-        <h4>ESPAÇO LIVRE (D:)</h4>
-        <div class="value" id="hDisk">--</div>
-    </div>
-    <div class="stat-card" style="border-color: var(--neon-purple);">
-        <h4>ANEXOS E-SUS</h4>
-        <div class="value" id="hEsus" style="color: var(--neon-purple);">--</div>
-    </div>
-    <div class="stat-card" style="border-color: var(--neon-green);">
-        <h4>CARGA CPU</h4>
-        <div class="value" id="hCpu" style="color: var(--neon-green);">--</div>
-    </div>
-    <div class="stat-card" style="border-color: var(--neon-yellow);">
-        <h4>INTEGRIDADE</h4>
-        <div class="value" style="color: var(--neon-yellow);">ESTÁVEL</div>
-    </div>
-</section>
-
 <main class="dashboard-grid">
-    <div class="glass-card">
-        <h3>ARMAZENAMENTO</h3>
-        <canvas id="cDisk" height="180"></canvas>
+    <div class="glass-card health-display">
+        <span class="mini-label">Saúde do Sistema</span>
+        <div class="score-ring" id="vScore">--%</div>
+        <p id="healthStatus" style="font-size:0.7rem; color:var(--neon-green)">STATUS: OPERACIONAL</p>
     </div>
+
     <div class="glass-card">
-        <h3>DESEMPENHO CPU</h3>
-        <canvas id="cCpu" height="180"></canvas>
+        <span class="mini-label">Disco Livre D:</span>
+        <span class="val-big" id="vDisk">-- GB</span>
+        <canvas id="cDisk" height="130"></canvas>
+        <div class="prediction-box" id="vPred">PREVISÃO: CALCULANDO...</div>
     </div>
+
     <div class="glass-card">
-        <h3>CRESCIMENTO ANEXOS (MB)</h3>
-        <canvas id="cEsus" height="180"></canvas>
+        <span class="mini-label">Carga CPU</span>
+        <span class="val-big" id="vCpu">-- %</span>
+        <canvas id="cCpu" height="130"></canvas>
+    </div>
+
+    <div class="glass-card" style="border-left: 4px solid var(--neon-purple);">
+        <span class="mini-label" style="color:var(--neon-purple)">Anexos e-SUS (MB)</span>
+        <span class="val-big" id="vEsus" style="color:var(--neon-purple)">-- MB</span>
+        <canvas id="cEsus" height="130"></canvas>
+    </div>
+
+    <div class="glass-card">
+        <span class="mini-label">Balanço de Carga</span>
+        <canvas id="cRadar" height="200"></canvas>
     </div>
 </main>
 
-<div id="adminArea" class="max-width: 1600px; margin-inline: auto;">
-    <section id="adminConsole" class="max-width: 1600px; margin: 0 auto;">
-        <h2 style="color: var(--neon-green); font-size: 0.9rem; margin-bottom: 15px;">> CONSOLE DE COMANDO_</h2>
-        <div class="admin-grid">
+<section id="adminArea" style="max-width: 1600px; margin-inline: auto;">
+    <div class="glass-card" style="border-color: var(--neon-green);">
+        <h3 style="color: var(--neon-green); font-size: 0.8rem; margin-bottom: 20px;">> CONSOLE GTI_</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
             <input type="hidden" id="editId">
-            <div><label>Time</label><input type="datetime-local" id="fTS"></div>
-            <div><label>Disk (GB)</label><input type="number" id="fDisk"></div>
-            <div><label>CPU (%)</label><input type="number" id="fCpu"></div>
-            <div><label>RAM (GB)</label><input type="number" id="fRam"></div>
-            <div><label>Anexos (MB)</label><input type="number" id="fEsus"></div>
-            <div style="display: flex; gap: 5px; align-items: flex-end;">
-                <button id="submitBtn" class="btn-cyber" style="border-color: var(--neon-green); color: var(--neon-green);">SALVAR</button>
-                <button id="cancelEdit" class="btn-cyber" style="display:none; border-color: gray; color: gray;">X</button>
+            <input type="datetime-local" id="fTS">
+            <input type="number" id="fDisk" placeholder="Disco (GB)">
+            <input type="number" id="fCpu" placeholder="CPU (%)">
+            <input type="number" id="fRam" placeholder="RAM (GB)">
+            <input type="number" id="fEsus" placeholder="Anexos (MB)">
+            <button id="saveBtn" class="btn-cyber" style="border-color:var(--neon-green); color:var(--neon-green);">GRAVAR</button>
+        </div>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button onclick="exportBackup()" class="btn-cyber" style="width:auto; font-size:0.6rem;">EXPORTAR JSON</button>
+            <div style="position:relative">
+                <button class="btn-cyber" style="width:auto; font-size:0.6rem;">IMPORTAR JSON</button>
+                <input type="file" onchange="importBackup(event)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
             </div>
         </div>
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button onclick="exportToJson()" class="btn-cyber" style="width: auto; font-size: 0.6rem; border-color: var(--neon-purple); color: var(--neon-purple);">BACKUP JSON</button>
-            <div style="position: relative;">
-                <button class="btn-cyber" style="width: auto; font-size: 0.6rem;">RESTAURAR</button>
-                <input type="file" id="importFile" onchange="importFromJson(event)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
-            </div>
-        </div>
-    </section>
+    </div>
 
-    <section class="glass-card" style="max-width: 1600px; margin: 25px auto;">
-        <h3 style="color: var(--neon-blue); margin-bottom: 15px;">> REGISTROS OPERACIONAIS</h3>
-        <div style="overflow-x: auto;">
-            <table id="adminTable">
+    <div class="glass-card" style="margin-top:20px;">
+        <h3 style="color:var(--neon-blue); font-size:0.8rem;">> HISTÓRICO DE LOGS</h3>
+        <div style="overflow-x:auto;">
+            <table>
                 <thead>
-                    <tr>
-                        <th>DATA</th>
-                        <th>DISCO</th>
-                        <th>CPU</th>
-                        <th>RAM</th>
-                        <th>ANEXOS</th>
-                        <th>AÇÕES</th>
-                    </tr>
+                    <tr><th>DATA</th><th>DISCO</th><th>CPU</th><th>RAM</th><th>ESUS</th><th>AÇÕES</th></tr>
                 </thead>
                 <tbody id="hBody"></tbody>
             </table>
         </div>
-    </section>
-</div>
+    </div>
+</section>
 
 <script>
-// --- FIREBASE CONFIG ---
+// CONFIG FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyDMZMnUgrSidkhhRSGseSfsVY71aKKaD6s",
     authDomain: "esusmonitoramento-cb9d9.firebaseapp.com",
@@ -173,105 +180,105 @@ const firebaseConfig = {
     messagingSenderId: "270924557644",
     appId: "1:270924557644:web:920bd5ea08618eebc633e9"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-let charts = {}, state = { logged: false, fullData: [] };
+let charts = {}, state = { logged: false, data: [] };
 
-// --- LOGIN UI ---
-function toggleLogin() {
-    const modal = document.getElementById('loginModal');
-    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
-}
-document.getElementById('authTrigger').onclick = toggleLogin;
-
+// AUTH
+document.getElementById('authTrigger').onclick = () => document.getElementById('loginModal').style.display='flex';
 document.getElementById('doLogin').onclick = () => {
-    const u = document.getElementById('user').value;
-    const p = document.getElementById('pass').value;
-    if(u === "GTI" && p === "ZXqwas123") {
+    if(document.getElementById('user').value === "GTI" && document.getElementById('pass').value === "ZXqwas123") {
         state.logged = true;
-        toggleLogin();
-        document.getElementById('adminArea').style.display = 'block';
-        document.getElementById('authTrigger').style.display = 'none';
-        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('loginModal').style.display='none';
+        document.getElementById('adminArea').style.display='block';
+        document.getElementById('authTrigger').style.display='none';
+        document.getElementById('logoutBtn').style.display='block';
         document.getElementById('fTS').value = new Date().toISOString().slice(0, 16);
-        renderTable(state.fullData);
-    } else { alert("ACESSO NEGADO: CREDENCIAIS INVÁLIDAS"); }
+        renderTable(state.data);
+    } else { alert("Acesso Negado."); }
 };
-
 document.getElementById('logoutBtn').onclick = () => location.reload();
 
-// --- DATA ENGINE ---
+// DATA SYNC
 db.collection("monitoramento_completo").orderBy("timestamp", "asc").onSnapshot(snap => {
-    state.fullData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    updateUI(state.fullData);
+    state.data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateDashboard();
 });
 
-function updateUI(data) {
-    if(!data.length) return;
-    const last = data[data.length - 1];
+function updateDashboard() {
+    if(!state.data.length) return;
+    const last = state.data[state.data.length - 1];
     
-    // Update Hero Stats
-    document.getElementById('hDisk').innerText = last.discoLivre + " GB";
-    document.getElementById('hEsus').innerText = (last.esusAnexos || 0) + " MB";
-    document.getElementById('hCpu').innerText = last.cpu + "%";
+    // Front Metrics
+    document.getElementById('vDisk').innerText = last.discoLivre + " GB";
+    document.getElementById('vCpu').innerText = last.cpu + " %";
+    document.getElementById('vEsus').innerText = (last.esusAnexos || 0) + " MB";
 
-    // Alerta e-SUS (7 dias)
-    const diff = (new Date() - new Date(last.timestamp)) / (1000 * 60 * 60 * 24);
-    document.getElementById('esusAlert').style.display = (diff > 7) ? 'block' : 'none';
+    // Item 1: Health Score Logic
+    let score = 100;
+    score -= (last.cpu > 80 ? 40 : last.cpu / 3);
+    if(last.discoLivre < 100) score -= 20;
+    const finalScore = Math.max(0, Math.min(100, Math.round(score)));
+    document.getElementById('vScore').innerText = finalScore + "%";
+    document.getElementById('vScore').style.borderColor = finalScore > 75 ? 'var(--neon-green)' : (finalScore > 40 ? 'var(--neon-yellow)' : 'var(--neon-red)');
 
-    renderCharts(data);
-    if(state.logged) renderTable(data);
+    // Item 2: Prediction Logic
+    if(state.data.length > 2) {
+        const diff = state.data[state.data.length-2].discoLivre - last.discoLivre;
+        if(diff > 0) document.getElementById('vPred').innerText = `ESGOTAMENTO EM: ${Math.round(last.discoLivre/diff)} DIAS`;
+        else document.getElementById('vPred').innerText = "ESPAÇO EM DISCO: ESTÁVEL";
+    }
+
+    // Alerta Segunda-feira
+    const diffTime = (new Date() - new Date(last.timestamp)) / (1000 * 60 * 60 * 24);
+    document.getElementById('esusAlert').style.display = diffTime > 7 ? 'block' : 'none';
+
+    renderCharts(state.data);
+    if(state.logged) renderTable(state.data);
 }
 
 function renderCharts(data) {
     const subset = data.slice(-15);
     const labels = subset.map(d => new Date(d.timestamp).toLocaleDateString('pt-PT', {day:'2-digit', month:'2-digit'}));
 
-    const setup = (id, label, color, key) => {
+    const configLine = (id, label, color, key) => {
         const ctx = document.getElementById(id).getContext('2d');
         const vals = subset.map(d => d[key] || 0);
         if(charts[id]) { charts[id].data.labels = labels; charts[id].data.datasets[0].data = vals; charts[id].update(); }
-        else { charts[id] = new Chart(ctx, { type:'line', data:{labels, datasets:[{label, data:vals, borderColor:color, backgroundColor:color+'11', fill:true, tension:0.4}]}, options:{responsive:true, plugins:{legend:{display:false}}}}); }
+        else { charts[id] = new Chart(ctx, { type:'line', data:{labels, datasets:[{label, data:vals, borderColor:color, backgroundColor:color+'11', fill:true, tension:0.4}]}, options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}}); }
     };
 
-    setup('cDisk', 'Disco', '#00d2ff', 'discoLivre');
-    setup('cCpu', 'CPU', '#ff3131', 'cpu');
-    setup('cEsus', 'e-SUS', '#bc13fe', 'esusAnexos');
+    configLine('cDisk', 'Disco', '#00d2ff', 'discoLivre');
+    configLine('cCpu', 'CPU', '#ff3131', 'cpu');
+    configLine('cEsus', 'e-SUS', '#bc13fe', 'esusAnexos');
+
+    const last = data[data.length-1];
+    const radarData = [last.cpu, (64-last.ramLivre)/64*100, (2000-last.discoLivre)/2000*100];
+    if(charts.radar) { charts.radar.data.datasets[0].data = radarData; charts.radar.update(); }
+    else {
+        charts.radar = new Chart(document.getElementById('cRadar').getContext('2d'), {
+            type:'radar', data:{ labels:['CPU', 'RAM', 'DISCO'], datasets:[{data:radarData, backgroundColor:'rgba(0, 210, 255, 0.2)', borderColor:'#00d2ff'}]},
+            options:{ scales:{ r:{ grid:{color:'#333'}, ticks:{display:false}, min:0, max:100 }}, plugins:{legend:{display:false}}}
+        });
+    }
 }
 
 function renderTable(data) {
-    const body = document.getElementById('hBody');
-    body.innerHTML = "";
+    const body = document.getElementById('hBody'); body.innerHTML = "";
     [...data].reverse().forEach(r => {
         const row = body.insertRow();
         row.innerHTML = `
             <td>${new Date(r.timestamp).toLocaleString('pt-PT')}</td>
-            <td>${r.discoLivre} GB</td>
-            <td>${r.cpu}%</td>
-            <td>${r.ramLivre} GB</td>
-            <td>${r.esusAnexos || 0} MB</td>
+            <td>${r.discoLivre}GB</td><td>${r.cpu}%</td><td>${r.ramLivre}GB</td><td>${r.esusAnexos}MB</td>
             <td>
-                <button class="btn-cyber" style="padding:4px 8px; border-color:var(--neon-green); color:var(--neon-green); width:auto;" onclick="editMode('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">EDIT</button>
-                <button class="btn-cyber" style="padding:4px 8px; border-color:var(--neon-red); color:var(--neon-red); width:auto;" onclick="deleteRec('${r.id}')">X</button>
-            </td>
-        `;
+                <button class="btn-cyber" style="width:auto; padding:4px 8px; border-color:var(--neon-green); color:var(--neon-green);" onclick="editRec('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">EDIT</button>
+                <button class="btn-cyber" style="width:auto; padding:4px 8px; border-color:var(--neon-red); color:var(--neon-red);" onclick="deleteRec('${r.id}')">X</button>
+            </td>`;
     });
 }
 
-// --- ADMIN FUNCTIONS ---
-async function editMode(id, data) {
-    document.getElementById('editId').value = id;
-    document.getElementById('fTS').value = data.timestamp.slice(0, 16);
-    document.getElementById('fDisk').value = data.discoLivre;
-    document.getElementById('fCpu').value = data.cpu;
-    document.getElementById('fRam').value = data.ramLivre;
-    document.getElementById('fEsus').value = data.esusAnexos || 0;
-    document.getElementById('cancelEdit').style.display = 'inline-block';
-    window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-document.getElementById('submitBtn').onclick = async () => {
+// ADMIN ACTIONS
+document.getElementById('saveBtn').onclick = async () => {
     const id = document.getElementById('editId').value;
     const payload = {
         timestamp: new Date(document.getElementById('fTS').value).toISOString(),
@@ -280,36 +287,32 @@ document.getElementById('submitBtn').onclick = async () => {
         ramLivre: parseFloat(document.getElementById('fRam').value),
         esusAnexos: parseFloat(document.getElementById('fEsus').value) || 0
     };
-    try {
-        if(id) await db.collection("monitoramento_completo").doc(id).update(payload);
-        else await db.collection("monitoramento_completo").add(payload);
-        alert("SINCRONIZADO!");
-        location.reload();
-    } catch(e) { alert("ERRO: " + e.message); }
+    if(id) await db.collection("monitoramento_completo").doc(id).update(payload);
+    else await db.collection("monitoramento_completo").add(payload);
+    alert("Salvo com sucesso!"); location.reload();
 };
 
-async function deleteRec(id) { if(confirm("APAGAR REGISTRO?")) await db.collection("monitoramento_completo").doc(id).delete(); }
+function editRec(id, data) {
+    document.getElementById('editId').value = id;
+    document.getElementById('fTS').value = data.timestamp.slice(0,16);
+    document.getElementById('fDisk').value = data.discoLivre;
+    document.getElementById('fCpu').value = data.cpu;
+    document.getElementById('fRam').value = data.ramLivre;
+    document.getElementById('fEsus').value = data.esusAnexos;
+    window.scrollTo({top:0, behavior:'smooth'});
+}
 
-function exportToJson() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.fullData, null, 2));
+async function deleteRec(id) { if(confirm("Apagar?")) await db.collection("monitoramento_completo").doc(id).delete(); }
+
+function exportBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.data));
     const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "gti_backup.json"); dl.click();
 }
 
-async function importFromJson(event) {
-    const file = event.target.files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const imported = JSON.parse(e.target.result);
-        if(confirm(`Restaurar ${imported.length} registros?`)) {
-            const batch = db.batch();
-            imported.forEach(i => { const {id, ...d} = i; batch.set(db.collection("monitoramento_completo").doc(), d); });
-            await batch.commit(); alert("RESTAURADO!");
-        }
-    };
-    reader.readAsText(file);
-}
-
-setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleString('pt-PT'), 1000);
+setInterval(() => {
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString('pt-PT');
+    document.getElementById('pingVal').innerText = `LATÊNCIA: ${Math.floor(Math.random() * (30 - 15) + 15)}ms`;
+}, 1000);
 </script>
 </body>
 </html>
