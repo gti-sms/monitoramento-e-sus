@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTI | Intelligence Monitor</title>
+    <title>GTI | Command Center v3.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -11,108 +11,102 @@
     <style>
         :root {
             --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe;
-            --bg-dark: #05070a; --glass: rgba(13, 17, 23, 0.95); --border: rgba(0, 210, 255, 0.15);
+            --bg-dark: #02040a; --glass: rgba(13, 17, 23, 0.9); --border: rgba(0, 210, 255, 0.2);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--bg-dark); color: #e6edf3; font-family: 'JetBrains Mono', monospace; padding: 15px; }
+        body {
+            background-color: var(--bg-dark); color: #e6edf3; font-family: 'JetBrains Mono', monospace; padding: 20px;
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #02040a 100%);
+        }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 2px solid var(--border); margin-bottom: 25px; max-width: 1600px; margin-inline: auto; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1600px; margin: 0 auto; }
         
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); margin-bottom: 20px; max-width: 1600px; margin-inline: auto; }
+        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; }
+        .val-display { font-size: 2rem; font-weight: bold; color: #fff; margin: 5px 0; display: block; }
         
-        .grid-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; max-width: 1600px; margin: 0 auto; }
-        .glass-card { background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 15px; position: relative; }
+        #adminConsole { display: none; border: 1px solid var(--neon-green); margin: 0 auto 25px; max-width: 1600px; padding: 20px; border-radius: 12px; background: rgba(57, 255, 20, 0.05); }
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 10px; }
         
-        /* Destaque da Projeção */
-        .prediction-box { grid-column: span 1; background: linear-gradient(45deg, rgba(255, 49, 49, 0.1), transparent); border: 1px solid var(--neon-red); }
-        .val-big { font-size: 1.8rem; font-weight: bold; color: #fff; display: block; margin: 5px 0; }
+        input { background: #000; border: 1px solid var(--border); color: var(--neon-blue); padding: 10px; border-radius: 5px; width: 100%; outline: none; }
         
-        /* Form Admin */
-        #adminConsole { display: none; background: #0a0d14; border: 1px solid var(--neon-blue); padding: 15px; border-radius: 8px; margin-bottom: 20px; max-width: 1600px; margin-inline: auto; }
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-        input { background: #000; border: 1px solid var(--border); color: var(--neon-blue); padding: 8px; border-radius: 4px; width: 100%; font-size: 0.8rem; }
+        .btn-cyber { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 10px 15px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.7rem; transition: 0.3s; text-transform: uppercase; }
+        .btn-cyber:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        .btn-edit { border-color: var(--neon-green); color: var(--neon-green); margin-right: 5px; }
+        .btn-delete { border-color: var(--neon-red); color: var(--neon-red); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8rem; }
+        th { text-align: left; padding: 12px; color: var(--neon-blue); border-bottom: 1px solid var(--border); }
+        td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         
-        .btn-cyber { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 8px 12px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.65rem; transition: 0.3s; }
-        .btn-cyber:hover { background: var(--neon-blue); color: #000; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 10px; }
-        th { text-align: left; color: var(--neon-blue); padding: 8px; border-bottom: 1px solid var(--border); }
-        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        
-        .badge-update { background: var(--neon-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .alert-box { background: rgba(255, 49, 49, 0.1); border: 1px solid var(--neon-red); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.8rem; color: var(--neon-red); display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <div>
-        <h1 style="font-family: 'Orbitron'; font-size: 1.2rem; color: var(--neon-blue);">GTI MONITOR <small style="font-size: 0.5rem; color: gray;">PREDICTIVE AI</small></h1>
+    <div class="logo">
+        <h1 style="font-family: 'Orbitron'; letter-spacing: 2px;">GTI COMMAND</h1>
+        <div id="clock" style="font-size: 0.7rem; opacity: 0.5;">...</div>
     </div>
-    <div id="esusAlert" style="display:none"><span class="badge-update">PENDÊNCIA: ANEXOS E-SUS</span></div>
+    <div id="esusAlert" class="alert-box" style="margin-bottom:0; margin-right: 20px;">⚠️ ATUALIZAR ANEXOS E-SUS (CONTROLE DE SEGUNDA-FEIRA)</div>
     <div>
         <button id="authTrigger" class="btn-cyber">Login GTI</button>
-        <button id="logoutBtn" class="btn-cyber" style="display:none; border-color:var(--neon-red); color:var(--neon-red)">LOGOUT</button>
+        <button id="logoutBtn" class="btn-cyber" style="display:none; border-color:var(--neon-red); color:var(--neon-red)">Sair</button>
     </div>
 </header>
 
 <section id="adminConsole">
-    <h3 id="consoleTitle" style="color: var(--neon-blue); font-size: 0.7rem; margin-bottom: 10px;">> SISTEMA DE ENTRADA_</h3>
+    <h2 id="consoleTitle" style="color: var(--neon-green); font-size: 0.9rem;">> MODO ADMINISTRADOR: LANÇAMENTO_</h2>
     <div class="admin-grid">
         <input type="hidden" id="editId">
-        <div><label style="font-size: 0.6rem;">DATA</label><input type="datetime-local" id="fTS"></div>
-        <div><label style="font-size: 0.6rem;">DISCO D: (GB)</label><input type="number" id="fDisk"></div>
-        <div><label style="font-size: 0.6rem;">CPU (%)</label><input type="number" id="fCpu"></div>
-        <div><label style="font-size: 0.6rem;">RAM (GB)</label><input type="number" id="fRam"></div>
-        <div><label style="font-size: 0.6rem;">E-SUS (GB)</label><input type="number" id="fEsus"></div>
+        <div><label>Data/Hora</label><input type="datetime-local" id="fTS"></div>
+        <div><label>Disco D: (GB)</label><input type="number" id="fDisk"></div>
+        <div><label>CPU (%)</label><input type="number" id="fCpu"></div>
+        <div><label>RAM (GB)</label><input type="number" id="fRam"></div>
+        <div><label>Anexos e-SUS (MB)</label><input type="number" id="fEsus" placeholder="Tamanho em MB"></div>
         <div style="display: flex; align-items: flex-end; gap: 5px;">
-            <button id="submitBtn" class="btn-cyber" style="width:100%">SALVAR</button>
-            <button id="cancelEdit" class="btn-cyber" style="display:none; border-color:gray; color:gray">X</button>
+            <button id="submitBtn" class="btn-cyber" style="width:100%; border-color: var(--neon-green); color: var(--neon-green);">Transmitir</button>
+            <button id="cancelEdit" class="btn-cyber" style="display:none; border-color: gray; color: gray;">X</button>
         </div>
     </div>
 </section>
 
-<div class="grid-main">
-    <div class="glass-card prediction-box">
-        <h4 style="color: var(--neon-red); font-size: 0.7rem;">PROJEÇÃO DE ESGOTAMENTO (HD)</h4>
-        <span class="val-big" id="pDays">Calculando...</span>
-        <p id="pDate" style="font-size: 0.65rem; opacity: 0.7;">Analizando dados históricos...</p>
-    </div>
-
+<main class="dashboard-grid">
     <div class="glass-card">
-        <h4 style="font-size: 0.7rem;">STATUS DISCO D:</h4>
-        <span class="val-big" id="dDisk">-- GB</span>
-        <canvas id="cDisk" height="100"></canvas>
+        <h3>DISCO D: LIVRE</h3>
+        <span class="val-display" id="dDisk">-- GB</span>
+        <canvas id="cDisk" height="140"></canvas>
     </div>
-
     <div class="glass-card">
-        <h4 style="font-size: 0.7rem;">CARGA CPU</h4>
-        <span class="val-big" id="dCpu">-- %</span>
-        <canvas id="cCpu" height="100"></canvas>
+        <h3>PROCESSAMENTO CPU</h3>
+        <span class="val-display" id="dCpu">-- %</span>
+        <canvas id="cCpu" height="140"></canvas>
     </div>
-
     <div class="glass-card">
-        <h4 style="font-size: 0.7rem;">ANEXOS E-SUS</h4>
-        <span class="val-big" id="dEsus" style="color: var(--neon-purple)">-- GB</span>
-        <canvas id="cEsus" height="100"></canvas>
+        <h3>PASTA ANEXOS (e-SUS)</h3>
+        <span class="val-display" id="dEsus" style="color: var(--neon-purple)">-- MB</span>
+        <p style="font-size: 0.6rem; opacity: 0.5;">Frequência: Semanal (Segundas)</p>
+        <canvas id="cEsus" height="140"></canvas>
     </div>
-
-    <div class="glass-card" style="grid-column: span 1;">
-        <h4 style="font-size: 0.7rem;">EQUILÍBRIO DE RECURSOS</h4>
+    <div class="glass-card">
+        <h3>ESTABILIDADE DO SISTEMA</h3>
         <canvas id="cRadar" height="200"></canvas>
     </div>
-</div>
+</main>
 
-<section class="glass-card" style="margin-top: 20px; max-width: 1600px; margin-inline: auto;">
-    <h4 style="color: var(--neon-blue); font-size: 0.7rem;">> LOGS OPERACIONAIS</h4>
+<section class="glass-card" style="max-width: 1600px; margin: 25px auto;">
+    <h3 style="color: var(--neon-blue); font-size: 1rem;">> HISTÓRICO DE AUDITORIA</h3>
     <div style="overflow-x: auto;">
         <table>
             <thead>
                 <tr>
-                    <th>DATA</th>
-                    <th>DISCO</th>
-                    <th>CPU</th>
-                    <th>RAM</th>
-                    <th>E-SUS</th>
-                    <th class="adm-col" style="display:none">AÇÕES</th>
+                    <th>DATA/HORA</th>
+                    <th>DISCO (GB)</th>
+                    <th>CPU (%)</th>
+                    <th>RAM (GB)</th>
+                    <th>ANEXOS (MB)</th>
+                    <th class="adm-col" style="display:none">GESTÃO</th>
                 </tr>
             </thead>
             <tbody id="hBody"></tbody>
@@ -136,7 +130,7 @@ let charts = {}, state = { logged: false };
 
 // AUTH
 document.getElementById('authTrigger').onclick = () => {
-    const u = prompt("User:"); const p = prompt("Pass:");
+    const u = prompt("GTI User:"); const p = prompt("Password:");
     if(u === "GTI" && p === "ZXqwas123") {
         state.logged = true;
         document.getElementById('adminConsole').style.display = 'block';
@@ -148,92 +142,56 @@ document.getElementById('authTrigger').onclick = () => {
 };
 document.getElementById('logoutBtn').onclick = () => location.reload();
 
-// REALTIME LISTENER
+// DATA LISTENER
 db.collection("monitoramento_completo").orderBy("timestamp", "asc").onSnapshot(snap => {
     const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    updateUI(data);
+    renderDashboard(data);
 });
 
-function updateUI(data) {
+function renderDashboard(data) {
     if(!data.length) return;
     const last = data[data.length - 1];
 
     document.getElementById('dDisk').innerText = last.discoLivre + " GB";
     document.getElementById('dCpu').innerText = last.cpu + " %";
-    document.getElementById('dEsus').innerText = (last.esusAnexos || 0) + " GB";
+    document.getElementById('dEsus').innerText = (last.esusAnexos || 0) + " MB";
 
-    calculateFullPrediction(data);
-    renderCharts(data);
+    // Verificação de Segunda-feira (Alerta se não houver atualização há 7 dias)
+    const ultimaData = new Date(last.timestamp);
+    const hoje = new Date();
+    const diffDias = (hoje - ultimaData) / (1000 * 60 * 60 * 24);
+    document.getElementById('esusAlert').style.display = (diffDias > 7) ? 'block' : 'none';
+
+    updateCharts(data);
     renderTable(data);
 }
 
-// LÓGICA DE PROJEÇÃO MATEMÁTICA
-function calculateFullPrediction(data) {
-    if(data.length < 3) return;
-    
-    // Regressão simples usando timestamps e valores de disco
-    const x = data.map(d => new Date(d.timestamp).getTime());
-    const y = data.map(d => d.discoLivre);
-    
-    const n = x.length;
-    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-    for (let i = 0; i < n; i++) {
-        sumX += x[i]; sumY += y[i];
-        sumXY += x[i] * y[i]; sumXX += x[i] * x[i];
-    }
-    
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
+function updateCharts(data) {
+    const subset = data.slice(-12);
+    const labels = subset.map(d => new Date(d.timestamp).toLocaleDateString('pt-PT', {day:'2-digit', month:'2-digit'}));
 
-    // Se a inclinação for negativa, o disco está acabando
-    if(slope < 0) {
-        const timeToZero = (0 - intercept) / slope;
-        const dateZero = new Date(timeToZero);
-        const daysRemaining = Math.round((dateZero - new Date()) / (1000 * 60 * 60 * 24));
-        
-        document.getElementById('pDays').innerText = daysRemaining + " DIAS";
-        document.getElementById('pDate').innerText = "DATA CRÍTICA: " + dateZero.toLocaleDateString();
-        document.getElementById('pDays').style.color = daysRemaining < 30 ? "var(--neon-red)" : "var(--neon-green)";
-    } else {
-        document.getElementById('pDays').innerText = "ESTÁVEL";
-        document.getElementById('pDate').innerText = "Nenhuma tendência de queda detectada.";
-    }
-}
-
-function renderCharts(data) {
-    const subset = data.slice(-15);
-    const labels = subset.map(d => new Date(d.timestamp).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
-
-    const setup = (id, label, color, key) => {
+    const genLine = (id, label, color, key) => {
         const ctx = document.getElementById(id).getContext('2d');
         const vals = subset.map(d => d[key] || 0);
-        if(charts[id]) { 
-            charts[id].data.labels = labels; 
-            charts[id].data.datasets[0].data = vals; 
-            charts[id].update(); 
-        } else {
-            charts[id] = new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets: [{ label, data: vals, borderColor: color, backgroundColor: color+'11', fill: true, tension: 0.3 }] },
-                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { font: { size: 8 } } } } }
-            });
-        }
+        if(charts[id]) { charts[id].data.labels = labels; charts[id].data.datasets[0].data = vals; charts[id].update(); }
+        else { charts[id] = new Chart(ctx, { type:'line', data:{labels, datasets:[{label, data:vals, borderColor:color, backgroundColor: color+'22', fill:true, tension:0.4}]}, options:{plugins:{legend:{display:false}}}}); }
     };
 
-    setup('cDisk', 'Disco', '#00d2ff', 'discoLivre');
-    setup('cCpu', 'CPU', '#ff3131', 'cpu');
-    setup('cEsus', 'e-SUS', '#bc13fe', 'esusAnexos');
+    genLine('cDisk', 'Disco', '#00d2ff', 'discoLivre');
+    genLine('cCpu', 'CPU', '#ff3131', 'cpu');
+    genLine('cEsus', 'e-SUS (MB)', '#bc13fe', 'esusAnexos');
 
-    // Radar
+    // Radar de Estabilidade
     const last = data[data.length-1];
-    const ctxR = document.getElementById('cRadar').getContext('2d');
-    const rData = [last.cpu, (last.ramLivre/64)*100, (last.discoLivre/3000)*100];
-    if(charts.radar) { charts.radar.data.datasets[0].data = rData; charts.radar.update(); }
+    const ctxRadar = document.getElementById('cRadar').getContext('2d');
+    const radarData = [last.cpu, (64-last.ramLivre)/64*100, (3000-last.discoLivre)/3000*100];
+    
+    if(charts.radar) { charts.radar.data.datasets[0].data = radarData; charts.radar.update(); }
     else {
-        charts.radar = new Chart(ctxR, {
+        charts.radar = new Chart(ctxRadar, {
             type: 'radar',
-            data: { labels: ['CPU', 'RAM', 'HD'], datasets: [{ data: rData, borderColor: '#00d2ff', backgroundColor: 'rgba(0,210,255,0.1)' }] },
-            options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#222' } } }, plugins: { legend: { display: false } } }
+            data: { labels: ['Carga CPU', 'Uso RAM', 'Uso Disco'], datasets: [{ data: radarData, backgroundColor: 'rgba(57, 255, 20, 0.2)', borderColor: '#39ff14' }] },
+            options: { scales: { r: { grid: { color: '#333' }, angleLines: { color: '#333' }, ticks: { display: false }, min: 0, max: 100 } }, plugins: { legend: { display: false } } }
         });
     }
 }
@@ -244,37 +202,40 @@ function renderTable(data) {
     [...data].reverse().forEach(r => {
         const row = body.insertRow();
         row.innerHTML = `
-            <td>${new Date(r.timestamp).toLocaleDateString()}</td>
-            <td>${r.discoLivre}G</td>
-            <td>${r.cpu}%</td>
-            <td>${r.ramLivre}G</td>
-            <td>${r.esusAnexos || 0}G</td>
+            <td>${new Date(r.timestamp).toLocaleString('pt-PT')}</td>
+            <td>${r.discoLivre}</td>
+            <td>${r.cpu}</td>
+            <td>${r.ramLivre}</td>
+            <td style="color:var(--neon-purple)">${r.esusAnexos || '0'} MB</td>
             <td class="adm-col" style="${state.logged ? '' : 'display:none'}">
-                <button class="btn-cyber" style="border-color:var(--neon-green); color:var(--neon-green)" onclick="editMode('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">EDIT</button>
-                <button class="btn-cyber" style="border-color:var(--neon-red); color:var(--neon-red)" onclick="deleteRec('${r.id}')">X</button>
+                <button class="btn-cyber btn-edit" onclick="editMode('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">Editar</button>
+                <button class="btn-cyber btn-delete" onclick="deleteRec('${r.id}')">X</button>
             </td>
         `;
     });
 }
 
-// EDIÇÃO E SALVAMENTO
-function editMode(id, data) {
+// EDIT & SAVE
+async function editMode(id, data) {
     document.getElementById('editId').value = id;
     document.getElementById('fTS').value = data.timestamp.slice(0, 16);
     document.getElementById('fDisk').value = data.discoLivre;
     document.getElementById('fCpu').value = data.cpu;
     document.getElementById('fRam').value = data.ramLivre;
-    document.getElementById('fEsus').value = data.esusAnexos || '';
-    document.getElementById('consoleTitle').innerText = "> EDITANDO REGISTRO_";
+    document.getElementById('fEsus').value = data.esusAnexos || 0;
+    
+    document.getElementById('adminConsole').style.borderColor = "var(--neon-green)";
+    document.getElementById('consoleTitle').innerText = "> MODO EDIÇÃO: ATUALIZANDO REGISTRO_";
     document.getElementById('cancelEdit').style.display = "inline-block";
-    window.scrollTo(0,0);
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 document.getElementById('cancelEdit').onclick = () => {
     document.getElementById('editId').value = "";
-    document.getElementById('consoleTitle').innerText = "> SISTEMA DE ENTRADA_";
+    document.getElementById('consoleTitle').innerText = "> MODO ADMINISTRADOR: LANÇAMENTO_";
     document.getElementById('cancelEdit').style.display = "none";
     document.getElementById('fDisk').value = "";
+    document.getElementById('fEsus').value = "";
 };
 
 document.getElementById('submitBtn').onclick = async () => {
@@ -287,20 +248,19 @@ document.getElementById('submitBtn').onclick = async () => {
         esusAnexos: parseFloat(document.getElementById('fEsus').value) || 0
     };
 
+    if(isNaN(payload.discoLivre) || isNaN(payload.cpu)) return alert("Erro: Verifique os campos numéricos.");
+
     try {
         if(id) await db.collection("monitoramento_completo").doc(id).update(payload);
         else await db.collection("monitoramento_completo").add(payload);
-        alert("SINCRONIZADO!");
+        alert("Sincronização Cloud Concluída!");
         document.getElementById('cancelEdit').click();
-    } catch(e) { alert(e.message); }
+    } catch(e) { alert("Falha na Transmissão: " + e.message); }
 };
 
-async function deleteRec(id) { if(confirm("Apagar?")) await db.collection("monitoramento_completo").doc(id).delete(); }
+async function deleteRec(id) { if(confirm("Confirmar eliminação permanente?")) await db.collection("monitoramento_completo").doc(id).delete(); }
 
-setInterval(() => {
-    const d = new Date();
-    if(d.getDay() === 1) document.getElementById('esusAlert').style.display = 'block';
-}, 60000);
+setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleString('pt-PT'), 1000);
 </script>
 </body>
 </html>
