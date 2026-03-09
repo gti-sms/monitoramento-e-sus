@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTI | Command Center v3.0</title>
+    <title>GTI | Command Center v4.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe;
+            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe; --neon-yellow: #fefe33;
             --bg-dark: #02040a; --glass: rgba(13, 17, 23, 0.9); --border: rgba(0, 210, 255, 0.2);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,15 +25,17 @@
         .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; }
         .val-display { font-size: 2rem; font-weight: bold; color: #fff; margin: 5px 0; display: block; }
         
+        /* ADMIN CONSOLE */
         #adminConsole { display: none; border: 1px solid var(--neon-green); margin: 0 auto 25px; max-width: 1600px; padding: 20px; border-radius: 12px; background: rgba(57, 255, 20, 0.05); }
         .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 10px; }
+        .backup-zone { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border); display: flex; gap: 15px; align-items: center; }
         
         input { background: #000; border: 1px solid var(--border); color: var(--neon-blue); padding: 10px; border-radius: 5px; width: 100%; outline: none; }
         
         .btn-cyber { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 10px 15px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.7rem; transition: 0.3s; text-transform: uppercase; }
         .btn-cyber:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
-        .btn-edit { border-color: var(--neon-green); color: var(--neon-green); margin-right: 5px; }
-        .btn-delete { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-backup { border-color: var(--neon-yellow); color: var(--neon-yellow); }
+        .btn-backup:hover { background: var(--neon-yellow); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.8rem; }
         th { text-align: left; padding: 12px; color: var(--neon-blue); border-bottom: 1px solid var(--border); }
@@ -49,7 +51,7 @@
         <h1 style="font-family: 'Orbitron'; letter-spacing: 2px;">GTI COMMAND</h1>
         <div id="clock" style="font-size: 0.7rem; opacity: 0.5;">...</div>
     </div>
-    <div id="esusAlert" class="alert-box" style="margin-bottom:0; margin-right: 20px;">⚠️ ATUALIZAR ANEXOS E-SUS (CONTROLE DE SEGUNDA-FEIRA)</div>
+    <div id="esusAlert" class="alert-box" style="margin-bottom:0; margin-right: 20px;">⚠️ ATUALIZAR ANEXOS E-SUS (SEGUNDA-FEIRA)</div>
     <div>
         <button id="authTrigger" class="btn-cyber">Login GTI</button>
         <button id="logoutBtn" class="btn-cyber" style="display:none; border-color:var(--neon-red); color:var(--neon-red)">Sair</button>
@@ -64,11 +66,21 @@
         <div><label>Disco D: (GB)</label><input type="number" id="fDisk"></div>
         <div><label>CPU (%)</label><input type="number" id="fCpu"></div>
         <div><label>RAM (GB)</label><input type="number" id="fRam"></div>
-        <div><label>Anexos e-SUS (MB)</label><input type="number" id="fEsus" placeholder="Tamanho em MB"></div>
+        <div><label>Anexos (MB)</label><input type="number" id="fEsus"></div>
         <div style="display: flex; align-items: flex-end; gap: 5px;">
             <button id="submitBtn" class="btn-cyber" style="width:100%; border-color: var(--neon-green); color: var(--neon-green);">Transmitir</button>
             <button id="cancelEdit" class="btn-cyber" style="display:none; border-color: gray; color: gray;">X</button>
         </div>
+    </div>
+
+    <div class="backup-zone">
+        <span style="font-size: 0.7rem; color: var(--neon-yellow);">DATABASE TOOLS:</span>
+        <button onclick="exportToJson()" class="btn-cyber btn-backup">Exportar JSON</button>
+        <div style="position: relative;">
+            <button class="btn-cyber btn-backup">Restaurar JSON</button>
+            <input type="file" id="importFile" onchange="importFromJson(event)" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+        </div>
+        <span id="backupStatus" style="font-size: 0.6rem; opacity: 0.6;"></span>
     </div>
 </section>
 
@@ -86,17 +98,16 @@
     <div class="glass-card">
         <h3>PASTA ANEXOS (e-SUS)</h3>
         <span class="val-display" id="dEsus" style="color: var(--neon-purple)">-- MB</span>
-        <p style="font-size: 0.6rem; opacity: 0.5;">Frequência: Semanal (Segundas)</p>
         <canvas id="cEsus" height="140"></canvas>
     </div>
     <div class="glass-card">
-        <h3>ESTABILIDADE DO SISTEMA</h3>
+        <h3>ESTABILIDADE</h3>
         <canvas id="cRadar" height="200"></canvas>
     </div>
 </main>
 
 <section class="glass-card" style="max-width: 1600px; margin: 25px auto;">
-    <h3 style="color: var(--neon-blue); font-size: 1rem;">> HISTÓRICO DE AUDITORIA</h3>
+    <h3 style="color: var(--neon-blue); font-size: 1rem;">> HISTÓRICO OPERACIONAL</h3>
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -115,6 +126,7 @@
 </section>
 
 <script>
+// CONFIGURAÇÃO FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyDMZMnUgrSidkhhRSGseSfsVY71aKKaD6s",
     authDomain: "esusmonitoramento-cb9d9.firebaseapp.com",
@@ -126,7 +138,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-let charts = {}, state = { logged: false };
+let charts = {}, state = { logged: false, fullData: [] };
 
 // AUTH
 document.getElementById('authTrigger').onclick = () => {
@@ -137,29 +149,64 @@ document.getElementById('authTrigger').onclick = () => {
         document.getElementById('authTrigger').style.display = 'none';
         document.getElementById('logoutBtn').style.display = 'block';
         document.querySelectorAll('.adm-col').forEach(el => el.style.display = 'table-cell');
-        document.getElementById('fTS').value = new Date().toISOString().slice(0, 16);
     }
 };
-document.getElementById('logoutBtn').onclick = () => location.reload();
 
-// DATA LISTENER
+// EXPORTAR JSON
+function exportToJson() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.fullData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "gti_backup_" + new Date().getTime() + ".json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+// RESTAURAR JSON
+async function importFromJson(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (!Array.isArray(importedData)) throw new Error("Formato inválido");
+            
+            if(confirm(`Deseja restaurar ${importedData.length} registos? Isso não apagará os atuais.`)) {
+                const batch = db.batch();
+                importedData.forEach(item => {
+                    const docRef = db.collection("monitoramento_completo").doc();
+                    // Remove IDs antigos para não dar conflito se existirem
+                    const { id, ...cleanData } = item;
+                    batch.set(docRef, cleanData);
+                });
+                await batch.commit();
+                alert("Restauração concluída com sucesso!");
+            }
+        } catch (err) {
+            alert("Erro ao ler JSON: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// LISTENER & DASHBOARD
 db.collection("monitoramento_completo").orderBy("timestamp", "asc").onSnapshot(snap => {
-    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderDashboard(data);
+    state.fullData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderDashboard(state.fullData);
 });
 
 function renderDashboard(data) {
     if(!data.length) return;
     const last = data[data.length - 1];
-
     document.getElementById('dDisk').innerText = last.discoLivre + " GB";
     document.getElementById('dCpu').innerText = last.cpu + " %";
     document.getElementById('dEsus').innerText = (last.esusAnexos || 0) + " MB";
 
-    // Verificação de Segunda-feira (Alerta se não houver atualização há 7 dias)
-    const ultimaData = new Date(last.timestamp);
-    const hoje = new Date();
-    const diffDias = (hoje - ultimaData) / (1000 * 60 * 60 * 24);
+    // Alerta 7 dias
+    const diffDias = (new Date() - new Date(last.timestamp)) / (1000 * 60 * 60 * 24);
     document.getElementById('esusAlert').style.display = (diffDias > 7) ? 'block' : 'none';
 
     updateCharts(data);
@@ -179,19 +226,16 @@ function updateCharts(data) {
 
     genLine('cDisk', 'Disco', '#00d2ff', 'discoLivre');
     genLine('cCpu', 'CPU', '#ff3131', 'cpu');
-    genLine('cEsus', 'e-SUS (MB)', '#bc13fe', 'esusAnexos');
+    genLine('cEsus', 'e-SUS', '#bc13fe', 'esusAnexos');
 
-    // Radar de Estabilidade
     const last = data[data.length-1];
-    const ctxRadar = document.getElementById('cRadar').getContext('2d');
     const radarData = [last.cpu, (64-last.ramLivre)/64*100, (3000-last.discoLivre)/3000*100];
-    
     if(charts.radar) { charts.radar.data.datasets[0].data = radarData; charts.radar.update(); }
     else {
-        charts.radar = new Chart(ctxRadar, {
+        charts.radar = new Chart(document.getElementById('cRadar').getContext('2d'), {
             type: 'radar',
-            data: { labels: ['Carga CPU', 'Uso RAM', 'Uso Disco'], datasets: [{ data: radarData, backgroundColor: 'rgba(57, 255, 20, 0.2)', borderColor: '#39ff14' }] },
-            options: { scales: { r: { grid: { color: '#333' }, angleLines: { color: '#333' }, ticks: { display: false }, min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+            data: { labels: ['CPU', 'RAM', 'DISCO'], datasets: [{ data: radarData, backgroundColor: 'rgba(57, 255, 20, 0.2)', borderColor: '#39ff14' }] },
+            options: { scales: { r: { grid:{color:'#333'}, ticks:{display:false}, min:0, max:100 } }, plugins:{legend:{display:false}} }
         });
     }
 }
@@ -206,7 +250,7 @@ function renderTable(data) {
             <td>${r.discoLivre}</td>
             <td>${r.cpu}</td>
             <td>${r.ramLivre}</td>
-            <td style="color:var(--neon-purple)">${r.esusAnexos || '0'} MB</td>
+            <td style="color:var(--neon-purple)">${r.esusAnexos || 0} MB</td>
             <td class="adm-col" style="${state.logged ? '' : 'display:none'}">
                 <button class="btn-cyber btn-edit" onclick="editMode('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">Editar</button>
                 <button class="btn-cyber btn-delete" onclick="deleteRec('${r.id}')">X</button>
@@ -215,7 +259,6 @@ function renderTable(data) {
     });
 }
 
-// EDIT & SAVE
 async function editMode(id, data) {
     document.getElementById('editId').value = id;
     document.getElementById('fTS').value = data.timestamp.slice(0, 16);
@@ -223,20 +266,10 @@ async function editMode(id, data) {
     document.getElementById('fCpu').value = data.cpu;
     document.getElementById('fRam').value = data.ramLivre;
     document.getElementById('fEsus').value = data.esusAnexos || 0;
-    
-    document.getElementById('adminConsole').style.borderColor = "var(--neon-green)";
-    document.getElementById('consoleTitle').innerText = "> MODO EDIÇÃO: ATUALIZANDO REGISTRO_";
+    document.getElementById('consoleTitle').innerText = "> MODO EDIÇÃO ATIVO_";
     document.getElementById('cancelEdit').style.display = "inline-block";
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
-
-document.getElementById('cancelEdit').onclick = () => {
-    document.getElementById('editId').value = "";
-    document.getElementById('consoleTitle').innerText = "> MODO ADMINISTRADOR: LANÇAMENTO_";
-    document.getElementById('cancelEdit').style.display = "none";
-    document.getElementById('fDisk').value = "";
-    document.getElementById('fEsus').value = "";
-};
 
 document.getElementById('submitBtn').onclick = async () => {
     const id = document.getElementById('editId').value;
@@ -247,19 +280,15 @@ document.getElementById('submitBtn').onclick = async () => {
         ramLivre: parseFloat(document.getElementById('fRam').value),
         esusAnexos: parseFloat(document.getElementById('fEsus').value) || 0
     };
-
-    if(isNaN(payload.discoLivre) || isNaN(payload.cpu)) return alert("Erro: Verifique os campos numéricos.");
-
     try {
         if(id) await db.collection("monitoramento_completo").doc(id).update(payload);
         else await db.collection("monitoramento_completo").add(payload);
-        alert("Sincronização Cloud Concluída!");
-        document.getElementById('cancelEdit').click();
-    } catch(e) { alert("Falha na Transmissão: " + e.message); }
+        alert("Dados salvos!");
+        location.reload();
+    } catch(e) { alert("Erro: " + e.message); }
 };
 
-async function deleteRec(id) { if(confirm("Confirmar eliminação permanente?")) await db.collection("monitoramento_completo").doc(id).delete(); }
-
+async function deleteRec(id) { if(confirm("Apagar?")) await db.collection("monitoramento_completo").doc(id).delete(); }
 setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleString('pt-PT'), 1000);
 </script>
 </body>
