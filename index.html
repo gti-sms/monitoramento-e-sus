@@ -3,1634 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTI Monitor | Servidor de Produção</title>
+    <title>GTI | Intelligence Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #08090f;
-            --surface: #0e1018;
-            --surface2: #141620;
-            --surface3: #1a1e2e;
-            --border: rgba(255,255,255,0.07);
-            --border2: rgba(255,255,255,0.12);
-            --text: #e8eaf0;
-            --text2: #8890a8;
-            --text3: #4e5568;
-            --accent: #4f8ef7;
-            --accent2: #7c6af7;
-            --green: #2de4a0;
-            --yellow: #f7c94f;
-            --red: #f74f5e;
-            --purple: #a47cf7;
-            --cyan: #4fdef7;
-            --glow-accent: rgba(79,142,247,0.15);
-            --glow-green: rgba(45,228,160,0.12);
-            --glow-red: rgba(247,79,94,0.12);
-            --glow-yellow: rgba(247,201,79,0.12);
-            --font-display: 'Syne', sans-serif;
-            --font-mono: 'Space Mono', monospace;
-        }
-        .light {
-            --bg: #f0f2f8;
-            --surface: #ffffff;
-            --surface2: #f7f8fc;
-            --surface3: #edf0f7;
-            --border: rgba(0,0,0,0.07);
-            --border2: rgba(0,0,0,0.12);
-            --text: #0e1018;
-            --text2: #4e5568;
-            --text3: #8890a8;
-            --glow-accent: rgba(79,142,247,0.08);
+            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131; --neon-purple: #bc13fe;
+            --bg-dark: #05070a; --glass: rgba(13, 17, 23, 0.95); --border: rgba(0, 210, 255, 0.15);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-display);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Subtle grid background */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(var(--border) 1px, transparent 1px),
-                linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 48px 48px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .wrap {
-            position: relative;
-            z-index: 1;
-            max-width: 1480px;
-            margin: 0 auto;
-            padding: 0 24px 60px;
-        }
-
-        /* ─── TOP BAR ─── */
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 0 28px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 32px;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .logo-badge {
-            width: 42px; height: 42px;
-            background: linear-gradient(135deg, var(--accent), var(--accent2));
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 0 20px var(--glow-accent);
-        }
-
-        .logo-text { line-height: 1; }
-        .logo-text h1 {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 1.15rem;
-            letter-spacing: -0.3px;
-            color: var(--text);
-        }
-        .logo-text span {
-            font-size: 0.72rem;
-            color: var(--text2);
-            font-family: var(--font-mono);
-            letter-spacing: 1px;
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-pill {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 6px 14px;
-            border-radius: 20px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            font-size: 0.78rem;
-            font-family: var(--font-mono);
-            color: var(--text2);
-        }
-        .status-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 8px var(--green);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%,100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        .btn {
-            padding: 9px 18px;
-            border-radius: 8px;
-            border: 1px solid var(--border2);
-            background: var(--surface);
-            color: var(--text2);
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.82rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: all 0.2s;
-        }
-        .btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); transform: translateY(-1px); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-        .btn-accent { background: var(--accent); color: #fff; border-color: transparent; }
-        .btn-accent:hover { background: #3a7de8; color: #fff; }
-        .btn-green { background: rgba(45,228,160,0.12); color: var(--green); border-color: rgba(45,228,160,0.25); }
-        .btn-green:hover { background: rgba(45,228,160,0.2); color: var(--green); }
-        .btn-red { background: rgba(247,79,94,0.12); color: var(--red); border-color: rgba(247,79,94,0.25); }
-        .btn-red:hover { background: rgba(247,79,94,0.2); color: var(--red); }
-        .btn-yellow { background: rgba(247,201,79,0.12); color: var(--yellow); border-color: rgba(247,201,79,0.25); }
-        .btn-yellow:hover { background: rgba(247,201,79,0.2); color: var(--yellow); }
-
-        /* ─── ALERTS ─── */
-        #systemAlerts { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .alert {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 18px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            border: 1px solid;
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        .alert-success { background: rgba(45,228,160,0.08); border-color: rgba(45,228,160,0.25); color: var(--green); }
-        .alert-danger { background: rgba(247,79,94,0.08); border-color: rgba(247,79,94,0.25); color: var(--red); }
-        .alert-warning { background: rgba(247,201,79,0.08); border-color: rgba(247,201,79,0.25); color: var(--yellow); }
-        .alert-cpu { background: rgba(164,124,247,0.08); border-color: rgba(164,124,247,0.25); color: var(--purple); }
-        .alert-ram { background: rgba(79,222,247,0.08); border-color: rgba(79,222,247,0.25); color: var(--cyan); }
-        .alert-info { background: rgba(79,142,247,0.08); border-color: rgba(79,142,247,0.25); color: var(--accent); }
-        .alert-icon { font-size: 1.1rem; flex-shrink: 0; }
-
-        /* ─── CAPACITY BAR ─── */
-        .capacity-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px 28px;
-            margin-bottom: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-        .capacity-left { display: flex; align-items: center; gap: 20px; }
-        .cap-label { font-size: 0.75rem; font-family: var(--font-mono); color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-        .cap-value { font-size: 2.2rem; font-weight: 800; color: var(--accent); font-family: var(--font-mono); line-height: 1; }
-        .cap-sub { font-size: 0.78rem; color: var(--text2); margin-top: 4px; }
-        .capacity-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .cap-input {
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border2);
-            background: var(--surface2);
-            color: var(--text);
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            width: 180px;
-            text-align: center;
-        }
-        .cap-input:disabled { opacity: 0.4; cursor: not-allowed; }
-        .cap-input:focus { outline: none; border-color: var(--accent); }
-
-        /* ─── STAT CARDS ─── */
-        .cards-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        @media(max-width:1100px) { .cards-row { grid-template-columns: repeat(2,1fr); } }
-        @media(max-width:640px) { .cards-row { grid-template-columns: 1fr; } }
-
-        .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .stat-card:hover { transform: translateY(-3px); border-color: var(--border2); }
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            border-radius: 16px 16px 0 0;
-        }
-        .card-disk::before { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
-        .card-cpu::before { background: linear-gradient(90deg, var(--purple), var(--accent2)); }
-        .card-ram::before { background: linear-gradient(90deg, var(--cyan), var(--green)); }
-        .card-trend::before { background: linear-gradient(90deg, var(--green), var(--yellow)); }
-
-        .card-glow {
-            position: absolute;
-            top: -20px; right: -20px;
-            width: 100px; height: 100px;
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.3;
-        }
-        .card-disk .card-glow { background: var(--accent); }
-        .card-cpu .card-glow { background: var(--purple); }
-        .card-ram .card-glow { background: var(--cyan); }
-        .card-trend .card-glow { background: var(--green); }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 18px;
-        }
-        .card-tag {
-            font-size: 0.7rem;
-            font-family: var(--font-mono);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid;
-        }
-        .card-disk .card-tag { color: var(--accent); border-color: rgba(79,142,247,0.3); background: rgba(79,142,247,0.08); }
-        .card-cpu .card-tag { color: var(--purple); border-color: rgba(164,124,247,0.3); background: rgba(164,124,247,0.08); }
-        .card-ram .card-tag { color: var(--cyan); border-color: rgba(79,222,247,0.3); background: rgba(79,222,247,0.08); }
-        .card-trend .card-tag { color: var(--green); border-color: rgba(45,228,160,0.3); background: rgba(45,228,160,0.08); }
-
-        .card-icon { font-size: 1.4rem; opacity: 0.7; }
-
-        .card-main-value {
-            font-size: 3rem;
-            font-weight: 800;
-            font-family: var(--font-mono);
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-        .card-disk .card-main-value { color: var(--accent); }
-        .card-cpu .card-main-value { color: var(--purple); }
-        .card-ram .card-main-value { color: var(--cyan); }
-        .card-trend .card-main-value { color: var(--green); font-size: 1.9rem; }
-
-        .card-sublabel {
-            font-size: 0.78rem;
-            color: var(--text2);
-            margin-bottom: 18px;
-        }
-
-        .card-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 16px 0;
-        }
-
-        .card-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .stat-item {}
-        .stat-item .si-label { font-size: 0.68rem; font-family: var(--font-mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
-        .stat-item .si-val { font-size: 0.95rem; font-weight: 700; color: var(--text); }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.7rem;
-            font-family: var(--font-mono);
-            font-weight: 700;
-            letter-spacing: 1px;
-            padding: 3px 10px;
-            border-radius: 20px;
-        }
-        .badge-good { background: rgba(45,228,160,0.12); color: var(--green); }
-        .badge-warning { background: rgba(247,201,79,0.12); color: var(--yellow); }
-        .badge-critical { background: rgba(247,79,94,0.12); color: var(--red); }
-        .badge-empty { background: rgba(136,144,168,0.12); color: var(--text2); }
-
-        /* ─── PROGRESS BAR ─── */
-        .prog-bar { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; margin-top: 14px; }
-        .prog-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-        .prog-disk { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
-        .prog-cpu { background: linear-gradient(90deg, var(--purple), var(--accent2)); }
-        .prog-ram { background: linear-gradient(90deg, var(--cyan), var(--green)); }
-
-        /* ─── CHARTS ─── */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        @media(max-width:900px) { .charts-grid { grid-template-columns: 1fr; } }
-
-        .chart-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-        }
-        .chart-title {
-            font-size: 0.82rem;
-            font-family: var(--font-mono);
-            color: var(--text2);
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .chart-title-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-        }
-        .dot-disk { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-        .dot-cpu { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
-        .dot-ram { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
-        .dot-pie { background: var(--green); box-shadow: 0 0 8px var(--green); }
-
-        .chart-box { position: relative; height: 260px; }
-
-        /* ─── PROJECTIONS ─── */
-        .section-title {
-            font-size: 0.75rem;
-            font-family: var(--font-mono);
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        #projectionCards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .proj-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .proj-card:hover { transform: translateY(-3px); }
-        .proj-card::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 2px;
-        }
-        .proj-good::after { background: var(--green); }
-        .proj-warning::after { background: var(--yellow); }
-        .proj-critical::after { background: var(--red); }
-
-        .proj-days {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        .proj-pct {
-            font-family: var(--font-mono);
-            font-size: 2.2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-        .proj-good .proj-pct { color: var(--green); }
-        .proj-warning .proj-pct { color: var(--yellow); }
-        .proj-critical .proj-pct { color: var(--red); }
-        .proj-gb { font-size: 0.82rem; color: var(--text2); margin-bottom: 10px; }
-        .proj-date { font-size: 0.75rem; font-family: var(--font-mono); color: var(--text3); }
-
-        .proj-empty {
-            grid-column: 1/-1;
-            text-align: center;
-            padding: 48px;
-            color: var(--text2);
-        }
-        .proj-empty .big-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.4; }
-
-        .proj-exhaustion {
-            grid-column: 1/-1;
-            background: rgba(247,79,94,0.06);
-            border: 1px solid rgba(247,79,94,0.2);
-            border-radius: 14px;
-            padding: 24px;
-        }
-        .exh-title { font-weight: 700; color: var(--red); margin-bottom: 12px; font-size: 0.9rem; }
-        .exh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-        .exh-item .ei-lbl { font-size: 0.7rem; font-family: var(--font-mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
-        .exh-item .ei-val { font-size: 1rem; font-weight: 700; color: var(--text); }
-
-        /* ─── ADMIN PANEL ─── */
-        .admin-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 24px;
-        }
-        .admin-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .admin-title {
-            font-size: 0.82rem;
-            font-family: var(--font-mono);
-            color: var(--text2);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-        .admin-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .table-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 16px;
-            font-size: 0.8rem;
-            color: var(--text2);
-            font-family: var(--font-mono);
-        }
-
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th {
-            text-align: left;
-            padding: 12px 14px;
-            font-size: 0.68rem;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text3);
-            border-bottom: 1px solid var(--border);
-        }
-        .data-table td {
-            padding: 13px 14px;
-            font-size: 0.83rem;
-            color: var(--text);
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .data-table tr:hover td { background: var(--surface2); }
-        .data-table .mono { font-family: var(--font-mono); font-size: 0.8rem; }
-
-        .tbl-actions { display: flex; gap: 6px; }
-        .tbl-btn {
-            padding: 5px 10px;
-            border-radius: 6px;
-            border: 1px solid;
-            background: transparent;
-            font-size: 0.73rem;
-            font-family: var(--font-mono);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .tbl-btn-edit { color: var(--accent); border-color: rgba(79,142,247,0.3); }
-        .tbl-btn-edit:hover { background: rgba(79,142,247,0.1); }
-        .tbl-btn-del { color: var(--red); border-color: rgba(247,79,94,0.3); }
-        .tbl-btn-del:hover { background: rgba(247,79,94,0.1); }
-
-        /* ─── INFO CARD ─── */
-        .info-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        @media(max-width:640px) { .info-section { grid-template-columns: 1fr; } }
-
-        .info-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-        }
-        .info-subtitle {
-            font-size: 0.72rem;
-            font-family: var(--font-mono);
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 14px;
-        }
-        .info-list { list-style: none; }
-        .info-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 9px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.83rem;
-            color: var(--text2);
-        }
-        .info-list li:last-child { border-bottom: none; }
-        .info-list li strong { color: var(--text); font-weight: 600; }
-        .info-list .info-val {
-            font-family: var(--font-mono);
-            font-size: 0.78rem;
-            color: var(--text);
-        }
-
-        /* ─── MODALS ─── */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(6px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-box {
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            border-radius: 18px;
-            padding: 32px;
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
-            animation: modalIn 0.25s ease;
-        }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: none; } }
-        .modal-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        .modal-ttl {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .modal-close {
-            width: 30px; height: 30px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--surface2);
-            color: var(--text2);
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.15s;
-        }
-        .modal-close:hover { background: var(--surface3); color: var(--text); }
-
-        .form-grp { margin-bottom: 18px; }
-        .form-lbl {
-            display: block;
-            font-size: 0.75rem;
-            font-family: var(--font-mono);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text3);
-            margin-bottom: 7px;
-        }
-        .form-inp {
-            width: 100%;
-            padding: 11px 14px;
-            border: 1px solid var(--border2);
-            border-radius: 8px;
-            background: var(--surface2);
-            color: var(--text);
-            font-family: var(--font-mono);
-            font-size: 0.88rem;
-            transition: border-color 0.15s;
-        }
-        .form-inp:focus { outline: none; border-color: var(--accent); }
-        .form-inp:disabled { opacity: 0.4; cursor: not-allowed; }
-        textarea.form-inp { resize: vertical; min-height: 80px; font-family: var(--font-display); }
-
-        .form-hint {
-            font-size: 0.72rem;
-            color: var(--text3);
-            margin-top: 5px;
-            font-family: var(--font-mono);
-        }
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 24px;
-        }
-        .form-actions .btn { flex: 1; justify-content: center; }
-
-        .login-err {
-            margin-top: 14px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            background: rgba(247,79,94,0.1);
-            border: 1px solid rgba(247,79,94,0.25);
-            color: var(--red);
-            font-size: 0.82rem;
-            display: none;
-        }
-
-        .form-notice {
-            background: rgba(79,142,247,0.07);
-            border: 1px solid rgba(79,142,247,0.2);
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-size: 0.78rem;
-            color: var(--text2);
-            margin-bottom: 18px;
-        }
-
-        /* ─── FOOTER ─── */
-        footer {
-            text-align: center;
-            padding: 24px;
-            border-top: 1px solid var(--border);
-            color: var(--text3);
-            font-size: 0.75rem;
-            font-family: var(--font-mono);
-            letter-spacing: 0.5px;
-        }
-
-        .hidden { display: none !important; }
-
-        /* ─── SCROLLBAR ─── */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+        body { background-color: var(--bg-dark); color: #e6edf3; font-family: 'JetBrains Mono', monospace; padding: 15px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); margin-bottom: 20px; max-width: 1600px; margin-inline: auto; }
+        
+        .grid-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; max-width: 1600px; margin: 0 auto; }
+        .glass-card { background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 15px; position: relative; }
+        
+        /* Destaque da Projeção */
+        .prediction-box { grid-column: span 1; background: linear-gradient(45deg, rgba(255, 49, 49, 0.1), transparent); border: 1px solid var(--neon-red); }
+        .val-big { font-size: 1.8rem; font-weight: bold; color: #fff; display: block; margin: 5px 0; }
+        
+        /* Form Admin */
+        #adminConsole { display: none; background: #0a0d14; border: 1px solid var(--neon-blue); padding: 15px; border-radius: 8px; margin-bottom: 20px; max-width: 1600px; margin-inline: auto; }
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        input { background: #000; border: 1px solid var(--border); color: var(--neon-blue); padding: 8px; border-radius: 4px; width: 100%; font-size: 0.8rem; }
+        
+        .btn-cyber { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 8px 12px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.65rem; transition: 0.3s; }
+        .btn-cyber:hover { background: var(--neon-blue); color: #000; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 10px; }
+        th { text-align: left; color: var(--neon-blue); padding: 8px; border-bottom: 1px solid var(--border); }
+        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        
+        .badge-update { background: var(--neon-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div class="wrap">
+<header>
+    <div>
+        <h1 style="font-family: 'Orbitron'; font-size: 1.2rem; color: var(--neon-blue);">GTI MONITOR <small style="font-size: 0.5rem; color: gray;">PREDICTIVE AI</small></h1>
+    </div>
+    <div id="esusAlert" style="display:none"><span class="badge-update">PENDÊNCIA: ANEXOS E-SUS</span></div>
+    <div>
+        <button id="authTrigger" class="btn-cyber">Login GTI</button>
+        <button id="logoutBtn" class="btn-cyber" style="display:none; border-color:var(--neon-red); color:var(--neon-red)">LOGOUT</button>
+    </div>
+</header>
 
-    <!-- TOP BAR -->
-    <header class="topbar">
-        <div class="logo-area">
-            <div class="logo-badge">📡</div>
-            <div class="logo-text">
-                <h1>GTI Monitor</h1>
-                <span>SERVIDOR DE PRODUÇÃO · DISCO + CPU + RAM</span>
-            </div>
-        </div>
-        <div class="topbar-right">
-            <div class="status-pill">
-                <div class="status-dot"></div>
-                <span>ONLINE</span>
-            </div>
-            <button id="themeToggle" class="btn">
-                <span id="themeIcon">☀️</span> Tema
-            </button>
-            <button id="adminLoginBtn" class="btn btn-accent">
-                🔐 Administrativo
-            </button>
-        </div>
-    </header>
-
-    <!-- ALERTS -->
-    <div id="systemAlerts"></div>
-
-    <!-- CAPACITY BAR -->
-    <div class="capacity-section">
-        <div class="capacity-left">
-            <div>
-                <div class="cap-label">Capacidade Disco D:</div>
-                <div class="cap-value" id="currentCapacityDisplay">3000 GB</div>
-                <div class="cap-sub" id="capacityMessage">Referência para cálculos de espaço</div>
-            </div>
-        </div>
-        <div class="capacity-right">
-            <input type="number" id="capacityInput" class="cap-input"
-                   placeholder="Nova capacidade (GB)" min="1" max="1000000" step="1" disabled>
-            <div id="adminCapacityControls" class="hidden">
-                <button id="updateCapacityBtn" class="btn btn-green">💾 Salvar</button>
-            </div>
-            <span id="capacityHelpText" style="font-size:0.75rem;color:var(--text3);font-family:var(--font-mono);">🔒 Somente admin</span>
+<section id="adminConsole">
+    <h3 id="consoleTitle" style="color: var(--neon-blue); font-size: 0.7rem; margin-bottom: 10px;">> SISTEMA DE ENTRADA_</h3>
+    <div class="admin-grid">
+        <input type="hidden" id="editId">
+        <div><label style="font-size: 0.6rem;">DATA</label><input type="datetime-local" id="fTS"></div>
+        <div><label style="font-size: 0.6rem;">DISCO D: (GB)</label><input type="number" id="fDisk"></div>
+        <div><label style="font-size: 0.6rem;">CPU (%)</label><input type="number" id="fCpu"></div>
+        <div><label style="font-size: 0.6rem;">RAM (GB)</label><input type="number" id="fRam"></div>
+        <div><label style="font-size: 0.6rem;">E-SUS (GB)</label><input type="number" id="fEsus"></div>
+        <div style="display: flex; align-items: flex-end; gap: 5px;">
+            <button id="submitBtn" class="btn-cyber" style="width:100%">SALVAR</button>
+            <button id="cancelEdit" class="btn-cyber" style="display:none; border-color:gray; color:gray">X</button>
         </div>
     </div>
+</section>
 
-    <!-- MAIN STAT CARDS -->
-    <div class="cards-row">
-
-        <!-- DISK -->
-        <div class="stat-card card-disk">
-            <div class="card-glow"></div>
-            <div class="card-header">
-                <span class="card-tag">Disco D:</span>
-                <span class="card-icon">💾</span>
-            </div>
-            <div class="card-main-value" id="currentFreePercent">—</div>
-            <div class="card-sublabel">Espaço livre</div>
-            <div class="card-divider"></div>
-            <div class="card-stats">
-                <div class="stat-item">
-                    <div class="si-label">Total</div>
-                    <div class="si-val" id="totalCapacity">3000 GB</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Livre</div>
-                    <div class="si-val" id="currentFreeGB">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Usado</div>
-                    <div class="si-val" id="currentUsedGB">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Atualiz.</div>
-                    <div class="si-val" id="lastUpdateTime">—</div>
-                </div>
-            </div>
-            <div class="prog-bar"><div class="prog-fill prog-disk" id="diskProgFill" style="width:0%"></div></div>
-        </div>
-
-        <!-- CPU -->
-        <div class="stat-card card-cpu">
-            <div class="card-glow"></div>
-            <div class="card-header">
-                <span class="card-tag">CPU</span>
-                <span class="card-icon">⚙️</span>
-            </div>
-            <div class="card-main-value" id="currentCpuPercent">—</div>
-            <div class="card-sublabel">Uso do processador</div>
-            <div class="card-divider"></div>
-            <div class="card-stats">
-                <div class="stat-item">
-                    <div class="si-label">Status</div>
-                    <div class="si-val" id="cpuStatus"><span class="status-badge badge-empty">—</span></div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Tendência</div>
-                    <div class="si-val" id="cpuTrend">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Média</div>
-                    <div class="si-val" id="cpuAverage">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Máximo</div>
-                    <div class="si-val" id="cpuMax">—</div>
-                </div>
-            </div>
-            <div class="prog-bar"><div class="prog-fill prog-cpu" id="cpuProgFill" style="width:0%"></div></div>
-        </div>
-
-        <!-- RAM -->
-        <div class="stat-card card-ram">
-            <div class="card-glow"></div>
-            <div class="card-header">
-                <span class="card-tag">RAM</span>
-                <span class="card-icon">🧠</span>
-            </div>
-            <div class="card-main-value" id="currentRamFree">—</div>
-            <div class="card-sublabel">Memória livre</div>
-            <div class="card-divider"></div>
-            <div class="card-stats">
-                <div class="stat-item">
-                    <div class="si-label">Status</div>
-                    <div class="si-val" id="ramStatus"><span class="status-badge badge-empty">—</span></div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Tendência</div>
-                    <div class="si-val" id="ramTrend">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Média</div>
-                    <div class="si-val" id="ramAverage">—</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Mínimo</div>
-                    <div class="si-val" id="ramMin">—</div>
-                </div>
-            </div>
-            <div class="prog-bar"><div class="prog-fill prog-ram" id="ramProgFill" style="width:100%"></div></div>
-        </div>
-
-        <!-- TREND -->
-        <div class="stat-card card-trend">
-            <div class="card-glow"></div>
-            <div class="card-header">
-                <span class="card-tag">Tendência</span>
-                <span class="card-icon">📈</span>
-            </div>
-            <div class="card-main-value" id="trendDisplayValue">—</div>
-            <div class="card-sublabel" id="trendExplanation">Consumo médio diário do disco</div>
-            <div class="card-divider"></div>
-            <div class="card-stats">
-                <div class="stat-item">
-                    <div class="si-label">Dias Rest.</div>
-                    <div class="si-val" id="daysRemaining">∞</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Status disco</div>
-                    <div class="si-val" id="diskStatusText"><span class="status-badge badge-empty">—</span></div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Registros</div>
-                    <div class="si-val" id="totalRecords">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="si-label">Período</div>
-                    <div class="si-val" id="periodDays">—</div>
-                </div>
-            </div>
-        </div>
-
+<div class="grid-main">
+    <div class="glass-card prediction-box">
+        <h4 style="color: var(--neon-red); font-size: 0.7rem;">PROJEÇÃO DE ESGOTAMENTO (HD)</h4>
+        <span class="val-big" id="pDays">Calculando...</span>
+        <p id="pDate" style="font-size: 0.65rem; opacity: 0.7;">Analizando dados históricos...</p>
     </div>
 
-    <!-- CHARTS -->
-    <div class="charts-grid">
-        <div class="chart-card">
-            <div class="chart-title">
-                <span class="chart-title-dot dot-disk"></span>
-                Histórico Disco D: — Espaço Livre
-            </div>
-            <div class="chart-box"><canvas id="diskChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">
-                <span class="chart-title-dot dot-cpu"></span>
-                Histórico CPU — Uso do Processador
-            </div>
-            <div class="chart-box"><canvas id="cpuChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">
-                <span class="chart-title-dot dot-ram"></span>
-                Histórico RAM — Memória Livre
-            </div>
-            <div class="chart-box"><canvas id="ramChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">
-                <span class="chart-title-dot dot-pie"></span>
-                Distribuição Atual do Disco
-            </div>
-            <div class="chart-box"><canvas id="pieChart"></canvas></div>
-        </div>
+    <div class="glass-card">
+        <h4 style="font-size: 0.7rem;">STATUS DISCO D:</h4>
+        <span class="val-big" id="dDisk">-- GB</span>
+        <canvas id="cDisk" height="100"></canvas>
     </div>
 
-    <!-- PROJECTIONS -->
-    <div class="section-title">Projeções de Espaço em Disco</div>
-    <div id="projectionCards"></div>
-
-    <!-- ADMIN PANEL -->
-    <div id="adminPanel" class="hidden">
-        <div class="section-title">Painel Administrativo</div>
-        <div class="admin-panel">
-            <div class="admin-header">
-                <div class="admin-title">Histórico Completo de Registros</div>
-                <div class="admin-controls">
-                    <button id="addRecordBtn" class="btn btn-green">➕ Novo</button>
-                    <button id="exportBtn" class="btn">📤 Exportar</button>
-                    <button id="importBtn" class="btn">📥 Importar</button>
-                    <button id="loadSampleBtn" class="btn btn-yellow">🧪 Exemplo</button>
-                </div>
-            </div>
-            <input type="file" id="importFile" accept=".json" class="hidden">
-            <div class="table-meta">
-                <span>Total: <strong id="tableTotalRecords">0</strong> registros</span>
-                <span>Última sync: <strong id="lastSync">—</strong></span>
-            </div>
-            <div style="overflow-x:auto">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Data / Hora</th>
-                            <th>Disco Livre</th>
-                            <th>CPU</th>
-                            <th>RAM Livre</th>
-                            <th>Observações</th>
-                            <th>Cap. Época</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTableBody"></tbody>
-                </table>
-            </div>
-        </div>
+    <div class="glass-card">
+        <h4 style="font-size: 0.7rem;">CARGA CPU</h4>
+        <span class="val-big" id="dCpu">-- %</span>
+        <canvas id="cCpu" height="100"></canvas>
     </div>
 
-    <!-- INFO SECTION -->
-    <div class="section-title">Informações do Sistema</div>
-    <div class="info-section">
-        <div class="info-card">
-            <div class="info-subtitle">Métricas Monitoradas</div>
-            <ul class="info-list">
-                <li><span>💾 Disco D:</span><span class="info-val">Espaço livre % e GB</span></li>
-                <li><span>⚙️ CPU</span><span class="info-val">Uso do processador</span></li>
-                <li><span>🧠 RAM</span><span class="info-val">GB livres de memória</span></li>
-                <li><span>📈 Tendências</span><span class="info-val">Consumo diário + projeções</span></li>
-                <li><span>🔔 Alertas</span><span class="info-val">Automáticos por limites</span></li>
-            </ul>
-        </div>
-        <div class="info-card">
-            <div class="info-subtitle">Configurações Técnicas</div>
-            <ul class="info-list">
-                <li><span>Servidor</span><span class="info-val">Produção · Anexos</span></li>
-                <li><span>Disco D:</span><span class="info-val"><span id="infoCapacity">3000</span> GB</span></li>
-                <li><span>Registros</span><span class="info-val"><span id="infoRecords">0</span></span></li>
-                <li><span>CPU alerta</span><span class="info-val">&gt;80% · Crítico &gt;90%</span></li>
-                <li><span>RAM alerta</span><span class="info-val">&lt;10 GB · Crítico &lt;5 GB</span></li>
-            </ul>
-        </div>
+    <div class="glass-card">
+        <h4 style="font-size: 0.7rem;">ANEXOS E-SUS</h4>
+        <span class="val-big" id="dEsus" style="color: var(--neon-purple)">-- GB</span>
+        <canvas id="cEsus" height="100"></canvas>
     </div>
 
-    <footer>GTI Monitor · Sistema de Monitoramento Completo do Servidor · Disco D: / CPU / RAM</footer>
-</div>
-
-<!-- LOGIN MODAL -->
-<div id="loginModal" class="modal">
-    <div class="modal-box">
-        <div class="modal-head">
-            <div class="modal-ttl">🔐 Acesso Administrativo</div>
-            <button class="modal-close" id="closeLoginModal">×</button>
-        </div>
-        <div class="form-grp">
-            <label class="form-lbl">Usuário</label>
-            <input type="text" id="username" class="form-inp" placeholder="Digite o usuário">
-        </div>
-        <div class="form-grp">
-            <label class="form-lbl">Senha</label>
-            <input type="password" id="password" class="form-inp" placeholder="Digite a senha">
-        </div>
-        <button id="loginBtn" class="btn btn-accent" style="width:100%;justify-content:center">🔑 Entrar</button>
-        <div id="loginError" class="login-err">❌ Usuário ou senha incorretos!</div>
+    <div class="glass-card" style="grid-column: span 1;">
+        <h4 style="font-size: 0.7rem;">EQUILÍBRIO DE RECURSOS</h4>
+        <canvas id="cRadar" height="200"></canvas>
     </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="editModal" class="modal">
-    <div class="modal-box">
-        <div class="modal-head">
-            <div class="modal-ttl" id="editModalTitle">📝 Novo Registro</div>
-            <button class="modal-close" id="closeEditModal">×</button>
-        </div>
-        <form id="dataForm">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div class="form-grp">
-                    <label class="form-lbl">Data (DD/MM/AAAA)</label>
-                    <input type="text" id="inputDate" class="form-inp" placeholder="DD/MM/AAAA" required>
-                </div>
-                <div class="form-grp">
-                    <label class="form-lbl">Hora (HH:MM)</label>
-                    <input type="text" id="inputTime" class="form-inp" placeholder="HH:MM" required>
-                </div>
-            </div>
-            <div class="form-grp">
-                <label class="form-lbl">💾 Disco Livre (% ou GB)</label>
-                <input type="number" step="0.01" id="inputDisk" class="form-inp" placeholder="Ex: 90.00 ou 2700.00" required>
-                <div class="form-hint">Capacidade atual: <span id="modalCurrentCapacity">3000</span> GB</div>
-            </div>
-            <div class="form-grp">
-                <label class="form-lbl">⚙️ CPU (%)</label>
-                <input type="number" step="0.01" id="inputCpu" class="form-inp" placeholder="Ex: 25.50" min="0" max="100" required>
-            </div>
-            <div class="form-grp">
-                <label class="form-lbl">🧠 RAM Livre (GB)</label>
-                <input type="number" step="0.1" id="inputRam" class="form-inp" placeholder="Ex: 59.8" min="0" required>
-            </div>
-            <div class="form-grp">
-                <label class="form-lbl">Observações</label>
-                <textarea id="inputObservations" class="form-inp" placeholder="Opcional..."></textarea>
-            </div>
-            <div class="form-notice">
-                💡 Registro salvo com capacidade atual (<span id="modalCapacity">3000</span> GB) como referência.
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-green">💾 Salvar</button>
-                <button type="button" id="cancelBtn" class="btn">Cancelar</button>
-            </div>
-        </form>
+<section class="glass-card" style="margin-top: 20px; max-width: 1600px; margin-inline: auto;">
+    <h4 style="color: var(--neon-blue); font-size: 0.7rem;">> LOGS OPERACIONAIS</h4>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>DATA</th>
+                    <th>DISCO</th>
+                    <th>CPU</th>
+                    <th>RAM</th>
+                    <th>E-SUS</th>
+                    <th class="adm-col" style="display:none">AÇÕES</th>
+                </tr>
+            </thead>
+            <tbody id="hBody"></tbody>
+        </table>
     </div>
-</div>
+</section>
 
 <script>
-// ─── CONFIG ───
-const CONFIG = {
-    ADMIN_USER: "admin",
-    ADMIN_PASSWORD: "admin123",
-    FIREBASE_CONFIG: {
-        apiKey: "AIzaSyDMZMnUgrSidkhhRSGseSfsVY71aKKaD6s",
-        authDomain: "esusmonitoramento-cb9d9.firebaseapp.com",
-        projectId: "esusmonitoramento-cb9d9",
-        storageBucket: "esusmonitoramento-cb9d9.firebasestorage.app",
-        messagingSenderId: "270924557644",
-        appId: "1:270924557644:web:920bd5ea08618eebc633e9"
-    },
-    DEFAULT_DISK_CAPACITY: 3000,
-    COLLECTION_NAME: "monitoramento_completo",
-    CONFIG_COLLECTION: "config_completo",
-    CONFIG_DISK_CAPACITY_DOC: "disk_capacity",
-    DISK_CRITICAL_PERCENT: 5,
-    DISK_WARNING_PERCENT: 20,
-    CPU_CRITICAL_PERCENT: 90,
-    CPU_WARNING_PERCENT: 80,
-    RAM_CRITICAL_GB: 5,
-    RAM_WARNING_GB: 10,
-    PROJECTION_DAYS: [30, 60, 90, 180, 365]
+const firebaseConfig = {
+    apiKey: "AIzaSyDMZMnUgrSidkhhRSGseSfsVY71aKKaD6s",
+    authDomain: "esusmonitoramento-cb9d9.firebaseapp.com",
+    projectId: "esusmonitoramento-cb9d9",
+    storageBucket: "esusmonitoramento-cb9d9.firebasestorage.app",
+    messagingSenderId: "270924557644",
+    appId: "1:270924557644:web:920bd5ea08618eebc633e9"
 };
 
-// ─── STATE ───
-const state = {
-    isAdmin: false, isDarkMode: false, firebaseInitialized: false,
-    editingId: null, data: [], diskCapacity: CONFIG.DEFAULT_DISK_CAPACITY,
-    unsubscribe: null, charts: { disk: null, cpu: null, ram: null, pie: null }
-};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let charts = {}, state = { logged: false };
 
-let firestore = null;
-
-// ─── UTILS ───
-const utils = {
-    formatDate: d => { const x=new Date(d); return `${x.getDate().toString().padStart(2,'0')}/${(x.getMonth()+1).toString().padStart(2,'0')}/${x.getFullYear()}`; },
-    formatDateTime: d => { const x=new Date(d); return `${x.getDate().toString().padStart(2,'0')}/${(x.getMonth()+1).toString().padStart(2,'0')}/${x.getFullYear()} ${x.getHours().toString().padStart(2,'0')}:${x.getMinutes().toString().padStart(2,'0')}`; },
-    formatTime: d => { const x=new Date(d); return `${x.getHours().toString().padStart(2,'0')}:${x.getMinutes().toString().padStart(2,'0')}`; },
-    parseDate: (ds,ts) => { const [d,m,y]=ds.split('/'); const [h,mi]=ts.split(':'); return new Date(y,m-1,d,h,mi); },
-    validateDate: ds => { const r=/^\d{2}\/\d{2}\/\d{4}$/; if(!r.test(ds)) return false; const [d,m,y]=ds.split('/'); const dt=new Date(y,m-1,d); return dt.getDate()===+d&&dt.getMonth()===m-1&&dt.getFullYear()===+y; },
-    validateTime: ts => { const r=/^\d{2}:\d{2}$/; if(!r.test(ts)) return false; const [h,mi]=ts.split(':'); return +h>=0&&+h<24&&+mi>=0&&+mi<60; },
-    normalizeDiskValue: (v,cap) => v>100 ? (v/cap)*100 : v,
-    calculateCurrentUsage: (fp,cap) => { const fGB=(fp/100)*cap; return { freePercent:parseFloat(fp.toFixed(2)), freeGB:parseFloat(fGB.toFixed(2)), usedGB:parseFloat((cap-fGB).toFixed(2)), capacity:cap }; },
-    generateId: () => Date.now().toString(36)+Math.random().toString(36).substr(2),
-
-    showAlert(type, title, msg) {
-        const d=document.createElement('div');
-        d.className=`alert alert-${type}`;
-        const icons={danger:'❌',warning:'⚠️',success:'✅',cpu:'⚙️',ram:'🧠',info:'ℹ️'};
-        d.innerHTML=`<span class="alert-icon">${icons[type]||'ℹ️'}</span><div><strong>${title}</strong> — ${msg}</div>`;
-        document.getElementById('systemAlerts').prepend(d);
-        setTimeout(()=>d.remove(),10000);
-    },
-
-    calculateCpuStats(data) {
-        if(!data.length) return null;
-        const vals=data.map(r=>r.cpu);
-        const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-        let trend=0;
-        if(data.length>=5){ const r=data.slice(0,5).map(x=>x.cpu); const ra=r.reduce((a,b)=>a+b,0)/r.length; const o=data.slice(5,10).map(x=>x.cpu); const oa=o.length?o.reduce((a,b)=>a+b,0)/o.length:ra; trend=ra-oa; }
-        return { average:parseFloat(avg.toFixed(2)), max:parseFloat(Math.max(...vals).toFixed(2)), min:parseFloat(Math.min(...vals).toFixed(2)), trend:parseFloat(trend.toFixed(2)) };
-    },
-
-    calculateRamStats(data) {
-        if(!data.length) return null;
-        const vals=data.map(r=>r.ramLivre);
-        const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-        let trend=0;
-        if(data.length>=5){ const r=data.slice(0,5).map(x=>x.ramLivre); const ra=r.reduce((a,b)=>a+b,0)/r.length; const o=data.slice(5,10).map(x=>x.ramLivre); const oa=o.length?o.reduce((a,b)=>a+b,0)/o.length:ra; trend=ra-oa; }
-        return { average:parseFloat(avg.toFixed(1)), max:parseFloat(Math.max(...vals).toFixed(1)), min:parseFloat(Math.min(...vals).toFixed(1)), trend:parseFloat(trend.toFixed(1)) };
+// AUTH
+document.getElementById('authTrigger').onclick = () => {
+    const u = prompt("User:"); const p = prompt("Pass:");
+    if(u === "GTI" && p === "ZXqwas123") {
+        state.logged = true;
+        document.getElementById('adminConsole').style.display = 'block';
+        document.getElementById('authTrigger').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.querySelectorAll('.adm-col').forEach(el => el.style.display = 'table-cell');
+        document.getElementById('fTS').value = new Date().toISOString().slice(0, 16);
     }
 };
+document.getElementById('logoutBtn').onclick = () => location.reload();
 
-// ─── FIREBASE ───
-async function initFirebase() {
-    if(state.firebaseInitialized) return true;
-    try {
-        firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
-        firestore=firebase.firestore();
-        state.firebaseInitialized=true;
-        await loadCapacity();
-        return true;
-    } catch(e) { console.error(e); return false; }
+// REALTIME LISTENER
+db.collection("monitoramento_completo").orderBy("timestamp", "asc").onSnapshot(snap => {
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateUI(data);
+});
+
+function updateUI(data) {
+    if(!data.length) return;
+    const last = data[data.length - 1];
+
+    document.getElementById('dDisk').innerText = last.discoLivre + " GB";
+    document.getElementById('dCpu').innerText = last.cpu + " %";
+    document.getElementById('dEsus').innerText = (last.esusAnexos || 0) + " GB";
+
+    calculateFullPrediction(data);
+    renderCharts(data);
+    renderTable(data);
 }
 
-async function loadCapacity() {
-    try {
-        const doc=await firestore.collection(CONFIG.CONFIG_COLLECTION).doc(CONFIG.CONFIG_DISK_CAPACITY_DOC).get();
-        state.diskCapacity=doc.exists ? doc.data().capacity : CONFIG.DEFAULT_DISK_CAPACITY;
-        if(!doc.exists) await saveCapacity();
-    } catch(e) { state.diskCapacity=CONFIG.DEFAULT_DISK_CAPACITY; }
-    updateCapacityDisplay();
-}
-
-async function saveCapacity() {
-    try {
-        await firestore.collection(CONFIG.CONFIG_COLLECTION).doc(CONFIG.CONFIG_DISK_CAPACITY_DOC).set({
-            capacity:state.diskCapacity, updatedAt:new Date().toISOString()
-        },{merge:true});
-        return true;
-    } catch(e) { return false; }
-}
-
-async function setupListener() {
-    if(!state.firebaseInitialized){ const ok=await initFirebase(); if(!ok) return; }
-    if(state.unsubscribe) state.unsubscribe();
-    state.unsubscribe=firestore.collection(CONFIG.COLLECTION_NAME).orderBy('timestamp','desc').onSnapshot(snap=>{
-        state.data=[];
-        snap.forEach(doc=>{ const d=doc.data(); d.id=doc.id; state.data.push(d); });
-        updateUI();
-        const n=new Date();
-        document.getElementById('lastSync').textContent=utils.formatTime(n);
-    });
-}
-
-async function saveRecord(record) {
-    if(!state.firebaseInitialized){ const ok=await initFirebase(); if(!ok){ utils.showAlert('danger','Erro','Sem conexão Firebase'); return; } }
-    try {
-        const fp=utils.normalizeDiskValue(record.discoLivre,state.diskCapacity);
-        const fr={ timestamp:record.timestamp, discoLivre:parseFloat(fp.toFixed(2)), cpu:parseFloat(record.cpu.toFixed(2)), ramLivre:parseFloat(record.ramLivre.toFixed(1)), capacidadeRegistro:state.diskCapacity, discoLivreGB:(fp/100)*state.diskCapacity, observacoes:record.observacoes||'', coletadoPor:'admin' };
-        if(state.editingId){ await firestore.collection(CONFIG.COLLECTION_NAME).doc(state.editingId).update(fr); state.editingId=null; }
-        else { await firestore.collection(CONFIG.COLLECTION_NAME).doc(utils.generateId()).set(fr); }
-        utils.showAlert('success','Salvo','Registro gravado no Firebase');
-    } catch(e){ utils.showAlert('danger','Erro','Falha: '+e.message); }
-}
-
-async function updateCapacity() {
-    const v=parseInt(document.getElementById('capacityInput').value);
-    if(isNaN(v)||v<1||v>1000000){ utils.showAlert('warning','Atenção','Valor inválido'); return; }
-    const old=state.diskCapacity; state.diskCapacity=v;
-    const ok=await saveCapacity();
-    if(ok){ updateCapacityDisplay(); updateUI(); document.getElementById('capacityInput').value=''; utils.showAlert('success','Capacidade','Alterada de '+old+' GB para '+v+' GB'); }
-    else { state.diskCapacity=old; updateCapacityDisplay(); utils.showAlert('danger','Erro','Falha ao salvar'); }
-}
-
-// ─── CALCULATIONS ───
-function calcDailyConsumption() {
-    if(state.data.length<2) return { dailyGB:0, totalDays:0, validPairs:0, confidence:'none' };
-    const sorted=[...state.data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-    let totGB=0,totDays=0,pairs=0;
-    for(let i=0;i<sorted.length-1;i++){
-        const r1=sorted[i],r2=sorted[i+1];
-        const c1=r1.capacidadeRegistro||state.diskCapacity,c2=r2.capacidadeRegistro||state.diskCapacity;
-        const f1=(r1.discoLivre/100)*c1,f2=(r2.discoLivre/100)*c2;
-        const cons=f1-f2,days=(new Date(r2.timestamp)-new Date(r1.timestamp))/(86400000);
-        if(cons>0&&days>0.1){ totGB+=cons; totDays+=days; pairs++; }
+// LÓGICA DE PROJEÇÃO MATEMÁTICA
+function calculateFullPrediction(data) {
+    if(data.length < 3) return;
+    
+    // Regressão simples usando timestamps e valores de disco
+    const x = data.map(d => new Date(d.timestamp).getTime());
+    const y = data.map(d => d.discoLivre);
+    
+    const n = x.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    for (let i = 0; i < n; i++) {
+        sumX += x[i]; sumY += y[i];
+        sumXY += x[i] * y[i]; sumXX += x[i] * x[i];
     }
-    const daily=pairs>0&&totDays>0?totGB/totDays:0;
-    const conf=pairs>=5&&totDays>=30?'high':pairs>=3&&totDays>=7?'medium':pairs>0?'low':'none';
-    return { dailyGB:daily, totalDays:totDays, validPairs:pairs, confidence:conf };
-}
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
 
-// ─── UI UPDATES ───
-function updateCapacityDisplay() {
-    const v=state.diskCapacity;
-    ['currentCapacityDisplay'].forEach(id=>document.getElementById(id).textContent=v+' GB');
-    document.getElementById('totalCapacity').textContent=v+' GB';
-    document.getElementById('infoCapacity').textContent=v;
-    document.getElementById('modalCurrentCapacity').textContent=v;
-    document.getElementById('modalCapacity').textContent=v;
-    if(state.isAdmin){
-        document.getElementById('capacityHelpText').textContent='';
-        document.getElementById('adminCapacityControls').classList.remove('hidden');
-        document.getElementById('capacityInput').disabled=false;
-        document.getElementById('capacityMessage').textContent='Capacidade configurável';
+    // Se a inclinação for negativa, o disco está acabando
+    if(slope < 0) {
+        const timeToZero = (0 - intercept) / slope;
+        const dateZero = new Date(timeToZero);
+        const daysRemaining = Math.round((dateZero - new Date()) / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('pDays').innerText = daysRemaining + " DIAS";
+        document.getElementById('pDate').innerText = "DATA CRÍTICA: " + dateZero.toLocaleDateString();
+        document.getElementById('pDays').style.color = daysRemaining < 30 ? "var(--neon-red)" : "var(--neon-green)";
     } else {
-        document.getElementById('capacityHelpText').textContent='🔒 Somente admin';
-        document.getElementById('adminCapacityControls').classList.add('hidden');
-        document.getElementById('capacityInput').disabled=true;
-        document.getElementById('capacityMessage').textContent='Referência para cálculos de espaço';
+        document.getElementById('pDays').innerText = "ESTÁVEL";
+        document.getElementById('pDate').innerText = "Nenhuma tendência de queda detectada.";
     }
 }
 
-function updateUI() {
-    if(!state.data.length){ showEmptyState(); return; }
-    const latest=state.data[0];
-    updateCards(latest);
-    updateCharts();
-    updateTrend();
-    updateProjections();
-    updateAlerts(latest);
-    if(state.isAdmin) updateTable();
-    const n=state.data.length;
-    ['totalRecords','infoRecords','tableTotalRecords'].forEach(id=>document.getElementById(id).textContent=n);
-}
+function renderCharts(data) {
+    const subset = data.slice(-15);
+    const labels = subset.map(d => new Date(d.timestamp).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
 
-function showEmptyState(){
-    const ids={currentFreePercent:'—',currentFreeGB:'—',currentUsedGB:'—',lastUpdateTime:'—',currentCpuPercent:'—',currentRamFree:'—',daysRemaining:'∞',periodDays:'—',trendDisplayValue:'—'};
-    Object.entries(ids).forEach(([k,v])=>{ const el=document.getElementById(k); if(el) el.textContent=v; });
-    document.getElementById('projectionCards').innerHTML='<div class="proj-empty"><div class="big-icon">📊</div><p>Adicione registros para ver as projeções</p></div>';
-    clearCharts();
-}
-
-function badgeHtml(label,type){ return `<span class="status-badge badge-${type}">${label}</span>`; }
-
-function updateCards(r){
-    const disk=utils.calculateCurrentUsage(r.discoLivre,state.diskCapacity);
-
-    // Disk
-    document.getElementById('currentFreePercent').textContent=disk.freePercent+'%';
-    document.getElementById('currentFreeGB').textContent=disk.freeGB.toFixed(2)+' GB';
-    document.getElementById('currentUsedGB').textContent=disk.usedGB.toFixed(2)+' GB';
-    document.getElementById('lastUpdateTime').textContent=utils.formatTime(r.timestamp);
-    document.getElementById('diskProgFill').style.width=disk.freePercent+'%';
-
-    // CPU
-    document.getElementById('currentCpuPercent').textContent=r.cpu.toFixed(2)+'%';
-    document.getElementById('cpuProgFill').style.width=r.cpu+'%';
-    const cpuStats=utils.calculateCpuStats(state.data);
-    if(cpuStats){
-        document.getElementById('cpuAverage').textContent=cpuStats.average+'%';
-        document.getElementById('cpuMax').textContent=cpuStats.max+'%';
-        document.getElementById('cpuTrend').textContent=(cpuStats.trend>0?'+':'')+cpuStats.trend+'%';
-        const cpuType=r.cpu>CONFIG.CPU_CRITICAL_PERCENT?'critical':r.cpu>CONFIG.CPU_WARNING_PERCENT?'warning':'good';
-        const cpuLbl=r.cpu>CONFIG.CPU_CRITICAL_PERCENT?'CRÍTICO':r.cpu>CONFIG.CPU_WARNING_PERCENT?'ALERTA':'NORMAL';
-        document.getElementById('cpuStatus').innerHTML=badgeHtml(cpuLbl,cpuType);
-    }
-
-    // RAM
-    document.getElementById('currentRamFree').textContent=r.ramLivre.toFixed(1)+' GB';
-    const ramStats=utils.calculateRamStats(state.data);
-    if(ramStats){
-        document.getElementById('ramAverage').textContent=ramStats.average+' GB';
-        document.getElementById('ramMin').textContent=ramStats.min+' GB';
-        document.getElementById('ramTrend').textContent=(ramStats.trend>0?'+':'')+ramStats.trend+' GB';
-        const ramPct=r.ramLivre; // approximate %
-        document.getElementById('ramProgFill').style.width=Math.min(100,(ramPct/64)*100)+'%';
-        const ramType=r.ramLivre<CONFIG.RAM_CRITICAL_GB?'critical':r.ramLivre<CONFIG.RAM_WARNING_GB?'warning':'good';
-        const ramLbl=r.ramLivre<CONFIG.RAM_CRITICAL_GB?'CRÍTICO':r.ramLivre<CONFIG.RAM_WARNING_GB?'ALERTA':'NORMAL';
-        document.getElementById('ramStatus').innerHTML=badgeHtml(ramLbl,ramType);
-    }
-}
-
-function updateTrend(){
-    if(state.data.length<2){ document.getElementById('trendDisplayValue').textContent='—'; return; }
-    const latest=state.data[0];
-    const usage=utils.calculateCurrentUsage(latest.discoLivre,state.diskCapacity);
-    const {dailyGB,totalDays,validPairs,confidence}=calcDailyConsumption();
-
-    if(dailyGB>0.01){
-        document.getElementById('trendDisplayValue').textContent=dailyGB.toFixed(2)+' GB/d';
-        const conf={'high':'✅ Alta','medium':'⚠️ Média','low':'❓ Baixa','none':''}[confidence]||'';
-        document.getElementById('trendExplanation').textContent=`${validPairs} períodos · ${totalDays.toFixed(0)} dias ${conf}`;
-        const days=Math.floor(usage.freeGB/dailyGB);
-        document.getElementById('daysRemaining').textContent=days>1000?'∞':days;
-        const dtype=days<30?'critical':days<90?'warning':'good';
-        const dlbl=days<30?'CRÍTICO':days<90?'ALERTA':'NORMAL';
-        document.getElementById('diskStatusText').innerHTML=badgeHtml(dlbl,dtype);
-    } else {
-        document.getElementById('trendDisplayValue').textContent='Estável';
-        document.getElementById('trendExplanation').textContent='Consumo insignificante';
-        document.getElementById('daysRemaining').textContent='∞';
-        document.getElementById('diskStatusText').innerHTML=badgeHtml('ESTÁVEL','good');
-    }
-
-    if(state.data.length>1){
-        const sorted=[...state.data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-        const d=Math.floor((new Date(sorted[sorted.length-1].timestamp)-new Date(sorted[0].timestamp))/86400000);
-        document.getElementById('periodDays').textContent=d+' dias';
-    }
-}
-
-function updateAlerts(r){
-    document.getElementById('systemAlerts').innerHTML='';
-    const disk=utils.calculateCurrentUsage(r.discoLivre,state.diskCapacity);
-    if(disk.freePercent<CONFIG.DISK_CRITICAL_PERCENT) utils.showAlert('danger','DISCO CRÍTICO',`Apenas ${disk.freePercent}% livre (${disk.freeGB.toFixed(1)} GB)`);
-    else if(disk.freePercent<CONFIG.DISK_WARNING_PERCENT) utils.showAlert('warning','DISCO BAIXO',`${disk.freePercent}% livres — considere liberar espaço`);
-    if(r.cpu>CONFIG.CPU_CRITICAL_PERCENT) utils.showAlert('cpu','CPU CRÍTICA',`${r.cpu.toFixed(1)}% de uso — verifique o servidor`);
-    else if(r.cpu>CONFIG.CPU_WARNING_PERCENT) utils.showAlert('cpu','CPU ALTA',`${r.cpu.toFixed(1)}% de uso`);
-    if(r.ramLivre<CONFIG.RAM_CRITICAL_GB) utils.showAlert('ram','RAM CRÍTICA',`Apenas ${r.ramLivre.toFixed(1)} GB livres`);
-    else if(r.ramLivre<CONFIG.RAM_WARNING_GB) utils.showAlert('ram','RAM BAIXA',`${r.ramLivre.toFixed(1)} GB livres`);
-    if(state.isAdmin&&state.data.length>0&&disk.freePercent>=CONFIG.DISK_WARNING_PERCENT&&r.cpu<=CONFIG.CPU_WARNING_PERCENT&&r.ramLivre>=CONFIG.RAM_WARNING_GB)
-        utils.showAlert('success','Sistema Normal',`${state.data.length} registros · todos indicadores dentro do limite`);
-}
-
-function updateProjections(){
-    const pc=document.getElementById('projectionCards');
-    pc.innerHTML='';
-    if(state.data.length<2){ pc.innerHTML='<div class="proj-empty"><div class="big-icon">📊</div><p>Adicione pelo menos 2 registros para ver projeções</p></div>'; return; }
-    const latest=state.data[0];
-    const usage=utils.calculateCurrentUsage(latest.discoLivre,state.diskCapacity);
-    const {dailyGB,validPairs,confidence}=calcDailyConsumption();
-    if(dailyGB<0.01){ pc.innerHTML=`<div class="proj-empty"><div class="big-icon">✅</div><p>Consumo estável · ${usage.freePercent}% livre (${usage.freeGB.toFixed(1)} GB)</p></div>`; return; }
-
-    CONFIG.PROJECTION_DAYS.forEach(days=>{
-        const cons=dailyGB*days;
-        const fGB=Math.max(0,usage.freeGB-cons);
-        const fPct=(fGB/state.diskCapacity)*100;
-        const fd=new Date(); fd.setDate(fd.getDate()+days);
-        const type=fPct<CONFIG.DISK_CRITICAL_PERCENT?'critical':fPct<CONFIG.DISK_WARNING_PERCENT?'warning':'good';
-        const c=document.createElement('div');
-        c.className=`proj-card proj-${type}`;
-        c.innerHTML=`<div class="proj-days">${days} dias</div><div class="proj-pct">${fPct.toFixed(1)}%</div><div class="proj-gb">${fGB.toFixed(1)} GB livres</div><div class="proj-date">${utils.formatDate(fd)}</div>`;
-        pc.appendChild(c);
-    });
-
-    if(dailyGB>0.01){
-        const daysToFull=Math.ceil(usage.freeGB/dailyGB);
-        if(daysToFull>0&&daysToFull<365*5){
-            const fd=new Date(); fd.setDate(fd.getDate()+daysToFull);
-            const ex=document.createElement('div');
-            ex.className='proj-exhaustion';
-            ex.innerHTML=`<div class="exh-title">🚨 Projeção de Esgotamento Total</div><div class="exh-grid"><div class="exh-item"><div class="ei-lbl">Dias restantes</div><div class="ei-val" style="color:var(--red);font-size:1.5rem;font-family:var(--font-mono)">${daysToFull}</div></div><div class="exh-item"><div class="ei-lbl">Data estimada</div><div class="ei-val">${utils.formatDate(fd)}</div></div><div class="exh-item"><div class="ei-lbl">Taxa</div><div class="ei-val">${dailyGB.toFixed(2)} GB/dia</div></div><div class="exh-item"><div class="ei-lbl">Livre hoje</div><div class="ei-val">${usage.freeGB.toFixed(1)} GB</div></div></div>`;
-            pc.appendChild(ex);
-        }
-    }
-}
-
-// ─── CHARTS ───
-function getChartDefaults(){
-    const dark=!document.body.classList.contains('light');
-    const text=dark?'rgba(136,144,168,0.8)':'rgba(78,85,104,0.8)';
-    const grid=dark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.05)';
-    return { text, grid, dark };
-}
-
-function baseChartOptions(yLabel,yUnit,yMin=null,yMax=null){
-    const {text,grid}=getChartDefaults();
-    return {
-        responsive:true, maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
-        plugins:{ legend:{display:false}, tooltip:{backgroundColor:'rgba(14,16,24,0.9)',titleColor:'#e8eaf0',bodyColor:'rgba(136,144,168,0.9)',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,padding:12,callbacks:{label:ctx=>`  ${ctx.dataset.label}: ${ctx.raw}${yUnit||''}`}} },
-        scales:{
-            x:{ grid:{color:grid,drawBorder:false}, ticks:{color:text,font:{family:'Space Mono',size:10},maxRotation:45} },
-            y:{ min:yMin,max:yMax, grid:{color:grid,drawBorder:false}, ticks:{color:text,font:{family:'Space Mono',size:10},callback:v=>v+(yUnit||'')}, title:{display:!!yLabel,text:yLabel,color:text,font:{family:'Space Mono',size:10}} }
+    const setup = (id, label, color, key) => {
+        const ctx = document.getElementById(id).getContext('2d');
+        const vals = subset.map(d => d[key] || 0);
+        if(charts[id]) { 
+            charts[id].data.labels = labels; 
+            charts[id].data.datasets[0].data = vals; 
+            charts[id].update(); 
+        } else {
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label, data: vals, borderColor: color, backgroundColor: color+'11', fill: true, tension: 0.3 }] },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { font: { size: 8 } } } } }
+            });
         }
     };
+
+    setup('cDisk', 'Disco', '#00d2ff', 'discoLivre');
+    setup('cCpu', 'CPU', '#ff3131', 'cpu');
+    setup('cEsus', 'e-SUS', '#bc13fe', 'esusAnexos');
+
+    // Radar
+    const last = data[data.length-1];
+    const ctxR = document.getElementById('cRadar').getContext('2d');
+    const rData = [last.cpu, (last.ramLivre/64)*100, (last.discoLivre/3000)*100];
+    if(charts.radar) { charts.radar.data.datasets[0].data = rData; charts.radar.update(); }
+    else {
+        charts.radar = new Chart(ctxR, {
+            type: 'radar',
+            data: { labels: ['CPU', 'RAM', 'HD'], datasets: [{ data: rData, borderColor: '#00d2ff', backgroundColor: 'rgba(0,210,255,0.1)' }] },
+            options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#222' } } }, plugins: { legend: { display: false } } }
+        });
+    }
 }
 
-function updateCharts(){
-    const sorted=[...state.data].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-    const labels=sorted.map(r=>utils.formatDate(r.timestamp));
+function renderTable(data) {
+    const body = document.getElementById('hBody');
+    body.innerHTML = "";
+    [...data].reverse().forEach(r => {
+        const row = body.insertRow();
+        row.innerHTML = `
+            <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+            <td>${r.discoLivre}G</td>
+            <td>${r.cpu}%</td>
+            <td>${r.ramLivre}G</td>
+            <td>${r.esusAnexos || 0}G</td>
+            <td class="adm-col" style="${state.logged ? '' : 'display:none'}">
+                <button class="btn-cyber" style="border-color:var(--neon-green); color:var(--neon-green)" onclick="editMode('${r.id}', ${JSON.stringify(r).replace(/"/g, '&quot;')})">EDIT</button>
+                <button class="btn-cyber" style="border-color:var(--neon-red); color:var(--neon-red)" onclick="deleteRec('${r.id}')">X</button>
+            </td>
+        `;
+    });
+}
 
-    const mk=(id,field,clr1,clr2,transform)=>{
-        const ctx=document.getElementById(id).getContext('2d');
-        if(state.charts[id]) state.charts[id].destroy();
-        const data=sorted.map(r=>transform?transform(r):r[field]);
-        const grad=ctx.createLinearGradient(0,0,0,260);
-        grad.addColorStop(0,clr1.replace(')',',0.18)').replace('rgb','rgba'));
-        grad.addColorStop(1,clr1.replace(')',',0)').replace('rgb','rgba'));
-        return { labels, datasets:[{ label:field, data, borderColor:clr1, backgroundColor:grad, borderWidth:2, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:clr1 }] };
+// EDIÇÃO E SALVAMENTO
+function editMode(id, data) {
+    document.getElementById('editId').value = id;
+    document.getElementById('fTS').value = data.timestamp.slice(0, 16);
+    document.getElementById('fDisk').value = data.discoLivre;
+    document.getElementById('fCpu').value = data.cpu;
+    document.getElementById('fRam').value = data.ramLivre;
+    document.getElementById('fEsus').value = data.esusAnexos || '';
+    document.getElementById('consoleTitle').innerText = "> EDITANDO REGISTRO_";
+    document.getElementById('cancelEdit').style.display = "inline-block";
+    window.scrollTo(0,0);
+}
+
+document.getElementById('cancelEdit').onclick = () => {
+    document.getElementById('editId').value = "";
+    document.getElementById('consoleTitle').innerText = "> SISTEMA DE ENTRADA_";
+    document.getElementById('cancelEdit').style.display = "none";
+    document.getElementById('fDisk').value = "";
+};
+
+document.getElementById('submitBtn').onclick = async () => {
+    const id = document.getElementById('editId').value;
+    const payload = {
+        timestamp: new Date(document.getElementById('fTS').value).toISOString(),
+        discoLivre: parseFloat(document.getElementById('fDisk').value),
+        cpu: parseFloat(document.getElementById('fCpu').value),
+        ramLivre: parseFloat(document.getElementById('fRam').value),
+        esusAnexos: parseFloat(document.getElementById('fEsus').value) || 0
     };
 
-    // disk
-    if(state.charts.disk) state.charts.disk.destroy();
-    state.charts.disk=new Chart(document.getElementById('diskChart').getContext('2d'),{
-        type:'line',
-        data:{labels,datasets:[{label:'Livre (%)',data:sorted.map(r=>utils.calculateCurrentUsage(r.discoLivre,state.diskCapacity).freePercent),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#4f8ef7'}]},
-        options:baseChartOptions('Livre (%)','%',0,100)
-    });
-
-    // cpu
-    if(state.charts.cpu) state.charts.cpu.destroy();
-    state.charts.cpu=new Chart(document.getElementById('cpuChart').getContext('2d'),{
-        type:'line',
-        data:{labels,datasets:[{label:'CPU (%)',data:sorted.map(r=>r.cpu),borderColor:'#a47cf7',backgroundColor:'rgba(164,124,247,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#a47cf7'}]},
-        options:baseChartOptions('CPU (%)','%',0,100)
-    });
-
-    // ram
-    if(state.charts.ram) state.charts.ram.destroy();
-    state.charts.ram=new Chart(document.getElementById('ramChart').getContext('2d'),{
-        type:'line',
-        data:{labels,datasets:[{label:'RAM Livre (GB)',data:sorted.map(r=>r.ramLivre),borderColor:'#4fdef7',backgroundColor:'rgba(79,222,247,0.08)',borderWidth:2,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#4fdef7'}]},
-        options:baseChartOptions('RAM (GB)',' GB')
-    });
-
-    // pie
-    if(state.charts.pie) state.charts.pie.destroy();
-    const latest=state.data[0];
-    const u=utils.calculateCurrentUsage(latest.discoLivre,state.diskCapacity);
-    state.charts.pie=new Chart(document.getElementById('pieChart').getContext('2d'),{
-        type:'doughnut',
-        data:{labels:['Usado','Livre'],datasets:[{data:[100-u.freePercent,u.freePercent],backgroundColor:['rgba(247,79,94,0.75)','rgba(45,228,160,0.75)'],borderColor:['rgba(247,79,94,1)','rgba(45,228,160,1)'],borderWidth:2,hoverOffset:6}]},
-        options:{
-            responsive:true,maintainAspectRatio:false,cutout:'68%',
-            plugins:{legend:{position:'bottom',labels:{color:'rgba(136,144,168,0.9)',font:{family:'Space Mono',size:11},padding:16}},tooltip:{backgroundColor:'rgba(14,16,24,0.9)',titleColor:'#e8eaf0',bodyColor:'rgba(136,144,168,0.9)',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,padding:12,callbacks:{label:ctx=>`  ${ctx.label}: ${ctx.raw.toFixed(1)}%`}}}
-        }
-    });
-}
-
-function clearCharts(){ Object.keys(state.charts).forEach(k=>{ if(state.charts[k]){ state.charts[k].destroy(); state.charts[k]=null; } }); }
-
-// ─── TABLE ───
-function updateTable(){
-    const tb=document.getElementById('dataTableBody');
-    tb.innerHTML='';
-    if(!state.data.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Nenhum registro</td></tr>'; return; }
-    state.data.forEach(r=>{
-        const u=utils.calculateCurrentUsage(r.discoLivre,state.diskCapacity);
-        const origCap=r.capacidadeRegistro||state.diskCapacity;
-        const origFree=(r.discoLivre/100)*origCap;
-        const cpuType=r.cpu>CONFIG.CPU_CRITICAL_PERCENT?'var(--red)':r.cpu>CONFIG.CPU_WARNING_PERCENT?'var(--yellow)':'var(--green)';
-        const ramType=r.ramLivre<CONFIG.RAM_CRITICAL_GB?'var(--red)':r.ramLivre<CONFIG.RAM_WARNING_GB?'var(--yellow)':'var(--green)';
-        const row=document.createElement('tr');
-        row.innerHTML=`<td class="mono">${utils.formatDateTime(r.timestamp)}</td><td><span class="mono">${r.discoLivre.toFixed(2)}%</span><br><small style="color:var(--text3)">${u.freeGB.toFixed(1)} GB</small></td><td class="mono" style="color:${cpuType}">${r.cpu.toFixed(2)}%</td><td class="mono" style="color:${ramType}">${r.ramLivre.toFixed(1)} GB</td><td style="color:var(--text2);font-size:0.8rem">${r.observacoes||'—'}</td><td class="mono" style="color:var(--text3)">${origCap} GB<br><small>${origFree.toFixed(1)} GB</small></td><td><div class="tbl-actions"><button class="tbl-btn tbl-btn-edit" data-id="${r.id}">✏️ Editar</button><button class="tbl-btn tbl-btn-del" data-id="${r.id}">🗑️ Excluir</button></div></td>`;
-        tb.appendChild(row);
-    });
-    document.querySelectorAll('.tbl-btn-edit').forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.id)));
-    document.querySelectorAll('.tbl-btn-del').forEach(b=>b.addEventListener('click',()=>deleteRec(b.dataset.id)));
-}
-
-async function deleteRec(id){
-    if(!confirm('Excluir este registro?')) return;
-    try { await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).delete(); utils.showAlert('success','Excluído','Registro removido'); }
-    catch(e){ utils.showAlert('danger','Erro','Falha ao excluir: '+e.message); }
-}
-
-function openEdit(id=null){
-    const r=id?state.data.find(x=>x.id===id):null;
-    document.getElementById('editModalTitle').textContent=r?'✏️ Editar Registro':'📝 Novo Registro';
-    state.editingId=r?r.id:null;
-    const now=new Date();
-    document.getElementById('inputDate').value=r?utils.formatDate(r.timestamp):utils.formatDate(now);
-    document.getElementById('inputTime').value=r?utils.formatTime(r.timestamp):utils.formatTime(now);
-    document.getElementById('inputDisk').value=r?r.discoLivre:'';
-    document.getElementById('inputCpu').value=r?r.cpu:'';
-    document.getElementById('inputRam').value=r?r.ramLivre:'';
-    document.getElementById('inputObservations').value=r?r.observacoes||'':'';
-    document.getElementById('editModal').style.display='flex';
-}
-
-// ─── AUTH ───
-function login(){
-    const u=document.getElementById('username').value;
-    const p=document.getElementById('password').value;
-    const err=document.getElementById('loginError');
-    if(u===CONFIG.ADMIN_USER&&p===CONFIG.ADMIN_PASSWORD){
-        state.isAdmin=true;
-        document.getElementById('adminPanel').classList.remove('hidden');
-        document.getElementById('loginModal').style.display='none';
-        err.style.display='none';
-        document.getElementById('adminLoginBtn').innerHTML='🚪 Sair';
-        document.getElementById('username').value=''; document.getElementById('password').value='';
-        updateCapacityDisplay(); updateTable();
-        utils.showAlert('success','Bem-vindo','Modo administrativo ativado');
-    } else { err.style.display='block'; }
-}
-
-function logout(){
-    state.isAdmin=false;
-    document.getElementById('adminPanel').classList.add('hidden');
-    document.getElementById('adminLoginBtn').innerHTML='🔐 Administrativo';
-    updateCapacityDisplay();
-    utils.showAlert('info','Logout','Modo administrativo desativado');
-}
-
-// ─── THEME ───
-function toggleTheme(){
-    state.isDarkMode=!state.isDarkMode;
-    document.body.classList.toggle('light',state.isDarkMode);
-    document.getElementById('themeIcon').textContent=state.isDarkMode?'🌙':'☀️';
-    Object.values(state.charts).forEach(c=>{ if(c) c.update(); });
-}
-
-// ─── EXPORT/IMPORT ───
-function exportJSON(){
-    const d={data:state.data,config:{capacity:state.diskCapacity,exportDate:new Date().toISOString(),total:state.data.length}};
-    const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(d,null,2));
-    a.download=`monitor_${new Date().toISOString().slice(0,10)}.json`; a.click();
-    utils.showAlert('success','Exportado','Backup criado com sucesso');
-}
-
-async function loadSample(){
-    if(!confirm('Carregar dados de exemplo para testar o sistema?')) return;
-    const s=[
-        {ts:new Date(Date.now()-30*86400000).toISOString(),d:85.0,c:15.5,r:62.3,o:'Início do monitoramento'},
-        {ts:new Date(Date.now()-25*86400000).toISOString(),d:83.5,c:18.2,r:61.8,o:'Crescimento normal'},
-        {ts:new Date(Date.now()-20*86400000).toISOString(),d:82.0,c:22.7,r:60.5,o:'Backup semanal'},
-        {ts:new Date(Date.now()-15*86400000).toISOString(),d:80.0,c:25.3,r:59.8,o:'Pico de uso'},
-        {ts:new Date(Date.now()-10*86400000).toISOString(),d:78.5,c:19.8,r:60.2,o:'Normalizado'},
-        {ts:new Date(Date.now()-5*86400000).toISOString(),d:76.0,c:32.5,r:58.5,o:'Processamento em lote'},
-        {ts:new Date().toISOString(),d:74.5,c:28.7,r:59.8,o:'Leitura atual · estável'}
-    ];
     try {
-        for(const x of s){
-            const id=utils.generateId();
-            await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({id,timestamp:x.ts,discoLivre:x.d,cpu:x.c,ramLivre:x.r,capacidadeRegistro:3000,discoLivreGB:(x.d/100)*3000,observacoes:x.o,sampleData:true});
-        }
-        utils.showAlert('success','Exemplo','7 registros de exemplo carregados');
-    } catch(e){ utils.showAlert('danger','Erro','Falha: '+e.message); }
-}
+        if(id) await db.collection("monitoramento_completo").doc(id).update(payload);
+        else await db.collection("monitoramento_completo").add(payload);
+        alert("SINCRONIZADO!");
+        document.getElementById('cancelEdit').click();
+    } catch(e) { alert(e.message); }
+};
 
-async function importJSON(ev){
-    const f=ev.target.files[0]; if(!f) return;
-    const rd=new FileReader();
-    rd.onload=async e=>{
-        try {
-            const imp=JSON.parse(e.target.result);
-            if(!imp.data||!Array.isArray(imp.data)){ utils.showAlert('danger','Erro','JSON inválido'); return; }
-            if(!confirm(`Importar ${imp.data.length} registros?`)){ document.getElementById('importFile').value=''; return; }
-            let ok=0;
-            for(const item of imp.data){
-                try { const id=item.id||utils.generateId(); await firestore.collection(CONFIG.COLLECTION_NAME).doc(id).set({timestamp:item.timestamp,discoLivre:item.discoLivre,cpu:item.cpu,ramLivre:item.ramLivre,capacidadeRegistro:item.capacidadeRegistro||state.diskCapacity,discoLivreGB:item.discoLivreGB||(item.discoLivre/100)*(item.capacidadeRegistro||state.diskCapacity),observacoes:item.observacoes||'',imported:true}); ok++; }
-                catch(ex){ console.error(ex); }
-            }
-            utils.showAlert('success','Importado',`${ok} registros importados`);
-        } catch(e){ utils.showAlert('danger','Erro',e.message); }
-        document.getElementById('importFile').value='';
-    };
-    rd.readAsText(f);
-}
+async function deleteRec(id) { if(confirm("Apagar?")) await db.collection("monitoramento_completo").doc(id).delete(); }
 
-// ─── MASKS ───
-function initMasks(){
-    document.getElementById('inputDate').addEventListener('input',e=>{
-        let v=e.target.value.replace(/\D/g,'');
-        if(v.length>2) v=v.slice(0,2)+'/'+v.slice(2);
-        if(v.length>5) v=v.slice(0,5)+'/'+v.slice(5,9);
-        e.target.value=v;
-    });
-    document.getElementById('inputTime').addEventListener('input',e=>{
-        let v=e.target.value.replace(/\D/g,'');
-        if(v.length>2) v=v.slice(0,2)+':'+v.slice(2,4);
-        e.target.value=v;
-    });
-}
-
-function validateForm(){
-    const date=document.getElementById('inputDate').value;
-    const time=document.getElementById('inputTime').value;
-    const disk=parseFloat(document.getElementById('inputDisk').value);
-    const cpu=parseFloat(document.getElementById('inputCpu').value);
-    const ram=parseFloat(document.getElementById('inputRam').value);
-    if(!utils.validateDate(date)){ alert('Data inválida! Use DD/MM/AAAA.'); return false; }
-    if(!utils.validateTime(time)){ alert('Hora inválida! Use HH:MM.'); return false; }
-    if(isNaN(disk)||disk<0){ alert('Valor do disco inválido.'); return false; }
-    if(isNaN(cpu)||cpu<0||cpu>100){ alert('CPU deve ser 0-100%.'); return false; }
-    if(isNaN(ram)||ram<0){ alert('RAM inválida.'); return false; }
-    return true;
-}
-
-// ─── EVENTS ───
-function setupEvents(){
-    document.getElementById('themeToggle').addEventListener('click',toggleTheme);
-    document.getElementById('adminLoginBtn').addEventListener('click',()=>{ if(state.isAdmin) logout(); else document.getElementById('loginModal').style.display='flex'; });
-    document.getElementById('closeLoginModal').addEventListener('click',()=>{ document.getElementById('loginModal').style.display='none'; document.getElementById('loginError').style.display='none'; });
-    document.getElementById('loginBtn').addEventListener('click',login);
-    document.getElementById('password').addEventListener('keypress',e=>{ if(e.key==='Enter') login(); });
-    document.getElementById('updateCapacityBtn').addEventListener('click',updateCapacity);
-    document.getElementById('capacityInput').addEventListener('keypress',e=>{ if(e.key==='Enter') updateCapacity(); });
-    document.getElementById('addRecordBtn').addEventListener('click',()=>openEdit());
-    document.getElementById('exportBtn').addEventListener('click',exportJSON);
-    document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
-    document.getElementById('importFile').addEventListener('change',importJSON);
-    document.getElementById('loadSampleBtn').addEventListener('click',loadSample);
-    document.getElementById('closeEditModal').addEventListener('click',()=>document.getElementById('editModal').style.display='none');
-    document.getElementById('cancelBtn').addEventListener('click',()=>document.getElementById('editModal').style.display='none');
-    document.getElementById('dataForm').addEventListener('submit',e=>{
-        e.preventDefault();
-        if(!validateForm()) return;
-        const record={ timestamp:utils.parseDate(document.getElementById('inputDate').value,document.getElementById('inputTime').value).toISOString(), discoLivre:parseFloat(document.getElementById('inputDisk').value), cpu:parseFloat(document.getElementById('inputCpu').value), ramLivre:parseFloat(document.getElementById('inputRam').value), observacoes:document.getElementById('inputObservations').value };
-        saveRecord(record);
-        document.getElementById('editModal').style.display='none';
-    });
-    window.addEventListener('click',e=>{ if(e.target.id==='loginModal'){ document.getElementById('loginModal').style.display='none'; } if(e.target.id==='editModal') document.getElementById('editModal').style.display='none'; });
-}
-
-// ─── INIT ───
-async function init(){
-    initMasks();
-    setupEvents();
-    await initFirebase();
-    await setupListener();
-    utils.showAlert('info','GTI Monitor Online',`Disco D: (${state.diskCapacity} GB) · CPU · RAM`);
-}
-
-document.addEventListener('DOMContentLoaded',init);
+setInterval(() => {
+    const d = new Date();
+    if(d.getDay() === 1) document.getElementById('esusAlert').style.display = 'block';
+}, 60000);
 </script>
 </body>
 </html>
